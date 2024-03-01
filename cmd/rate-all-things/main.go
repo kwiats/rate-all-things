@@ -8,10 +8,10 @@ import (
 )
 
 func main() {
-	_, err := database.InitializeDB()
+	db, err := database.InitializeDB()
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
-	server := server.RunAPIServer(":8000")
+	server := server.NewAPIServer(":8000", db)
 	server.Run()
 }
