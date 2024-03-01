@@ -1,37 +1,54 @@
 package server
 
 import (
-	"io"
 	"log"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/kwiats/rate-all-things/server/router"
+
+	"gorm.io/gorm"
 )
 
 type APIServer struct {
 	listenAddr string
+	database   *gorm.DB
+	router     *mux.Router
 }
 
-func RunAPIServer(listenAddr string) *APIServer {
+func NewAPIServer(listenAddr string, db *gorm.DB) *APIServer {
+	apiRouter := mux.NewRouter()
+
+	router.HandleCategoryRouter(db, apiRouter)
+
 	return &APIServer{
 		listenAddr: listenAddr,
+		database:   db,
+		router:     apiRouter,
 	}
 }
 
 func (s *APIServer) Run() {
-	helloHandler := func(w http.ResponseWriter, req *http.Request) {
-		_, err := io.WriteString(w, "Hello, world!\n")
-		if err != nil {
-			log.Printf("Cannot write hello world!. %v", err)
-		}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go s.startServer(&wg)
+	wg.Wait()
+}
+
+func (s *APIServer) startServer(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	srv := &http.Server{
+		Handler:      s.router,
+		Addr:         s.listenAddr,
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
 	}
 
-	r := mux.NewRouter()
-	r.HandleFunc("/", helloHandler)
-
-	log.Println("JSON Api server running on port: ", s.listenAddr)
-	err := http.ListenAndServe(s.listenAddr, r)
-	if err != nil {
-		log.Fatal(err)
+	log.Println("RAT api server running on port:", s.listenAddr)
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Could not listen on %s: %v\n", s.listenAddr, err)
 	}
 }
