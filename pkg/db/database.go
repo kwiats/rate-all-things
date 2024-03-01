@@ -1,10 +1,9 @@
 package database
 
 import (
+	category_model "github.com/kwiats/rate-all-things/internal/category/model"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-
-	category_model "github.com/kwiats/rate-all-things/internal/category"
 )
 
 func InitializeDB() (*gorm.DB, error) {
