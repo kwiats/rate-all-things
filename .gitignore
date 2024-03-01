@@ -147,4 +147,6 @@ sketch
 .history
 .ionide
 
-# End of https://www.toptal.com/developers/gitignore/api/go,react,visualstudiocode,pycharm+all
+# databases
+
+*.db
