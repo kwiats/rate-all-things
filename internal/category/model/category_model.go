@@ -5,17 +5,19 @@ import "gorm.io/gorm"
 type Category struct {
 	gorm.Model
 	Name         string        `gorm:"type:varchar(100);not null;unique"`
-	CustomFields []CustomField `gorm:"many2many:category_custom_fields;"`
+	CustomFields []CustomField `gorm:"many2many:category_custom_fields;joinForeignKey:CategoryID;JoinReferences:CustomFieldID"`
 }
 
 type CustomField struct {
 	gorm.Model
-	Name       string     `gorm:"type:varchar(100);not null"`
 	Type       string     `gorm:"type:varchar(100);not null"`
-	Categories []Category `gorm:"many2many:category_custom_fields;"`
+	Categories []Category `gorm:"many2many:category_custom_fields;joinForeignKey:CustomFieldID;JoinReferences:CategoryID"`
 }
 
 type CategoryCustomField struct {
-	CategoryID    uint `gorm:"primaryKey"`
-	CustomFieldID uint `gorm:"primaryKey"`
+	ID uint `gorm:"primaryKey;autoIncrement"`
+
+	CategoryID    uint
+	CustomFieldID uint
+	Title         string
 }
