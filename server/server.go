@@ -26,6 +26,7 @@ func NewAPIServer(listenAddr string, db *gorm.DB) *APIServer {
 
 	handlersRouter := []func(*gorm.DB, *mux.Router, *sync.WaitGroup){
 		router.HandleCategoryRouter,
+		router.HandleCustomFieldRouter,
 	}
 	wg := sync.WaitGroup{}
 	wg.Add(len(handlersRouter))

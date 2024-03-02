@@ -31,7 +31,7 @@ func HandleCategoryRouter(db *gorm.DB, router *mux.Router, wg *sync.WaitGroup) {
 
 func handleCreateCategory(categoryService *service.CategoryService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var categoryDTO model.CategoryDTO
+		var categoryDTO model.CreateCategoryDTO
 
 		if err := json.NewDecoder(r.Body).Decode(&categoryDTO); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
