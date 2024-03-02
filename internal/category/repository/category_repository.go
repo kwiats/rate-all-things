@@ -14,7 +14,7 @@ type ICategoryRepository interface {
 	GetCategoryByID(uint) (*category_model.Category, error)
 	GetAllCategories() ([]*category_model.Category, error)
 	UpdateCategory(uint, *category_model.Category) (*category_model.Category, error)
-	DeleteCategoryByID(uint) error
+	DeleteCategoryByID(uint, bool) error
 }
 
 func NewCategoryRepository(db *gorm.DB) *CategoryRepository {
@@ -57,9 +57,15 @@ func (repo *CategoryRepository) UpdateCategory(id uint, category *category_model
 	return &existingCategory, nil
 }
 
-func (repo *CategoryRepository) DeleteCategoryByID(id uint) error {
-	if err := repo.db.Delete(&category_model.Category{}, id).Error; err != nil {
-		return err
+func (repo *CategoryRepository) DeleteCategoryByID(id uint, forceDelete bool) error {
+	if forceDelete {
+		if err := repo.db.Unscoped().Delete(&category_model.Category{}, id).Error; err != nil {
+			return err
+		}
+	} else {
+		if err := repo.db.Delete(&category_model.Category{}, id).Error; err != nil {
+			return err
+		}
 	}
 	return nil
 }
