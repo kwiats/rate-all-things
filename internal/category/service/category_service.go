@@ -1,8 +1,11 @@
 package service
 
 import (
+	"errors"
+	"fmt"
 	"github.com/kwiats/rate-all-things/internal/category/model"
 	"github.com/kwiats/rate-all-things/internal/category/repository"
+	"gorm.io/gorm"
 )
 
 type CategoryService struct {
@@ -21,33 +24,28 @@ func NewCategoryService(repository repository.ICategoryRepository) *CategoryServ
 	return &CategoryService{repository: repository}
 }
 
-func (service *CategoryService) CreateCategory(categoryDTO model.CategoryDTO) (bool, error) {
-	customFields := model.MapCustomFieldsDTOToModel(categoryDTO.CustomFields)
-
+func (service *CategoryService) CreateCategory(createCategoryDTO model.CreateCategoryDTO) (bool, error) {
 	category := model.Category{
-		Name:         categoryDTO.Name,
-		CustomFields: customFields,
+		Name: createCategoryDTO.Name,
 	}
-
-	if _, err := service.repository.CreateCategory(&category); err != nil {
+	categoryCustomFields := model.MapCCFToModel(0, createCategoryDTO.CustomFields)
+	_, err := service.repository.CreateCategoryWithCustomFields(&category, &categoryCustomFields)
+	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func (service *CategoryService) GetCategory(id uint) (model.CategoryDTO, error) {
-	category, err := service.repository.GetCategoryByID(id)
+func (service *CategoryService) GetCategory(id uint) (model.CategoryOutputDTO, error) {
+	categoryWithCustomFields, err := service.repository.GetCategoryByID(id)
 	if err != nil {
-		return model.CategoryDTO{}, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.CategoryOutputDTO{}, fmt.Errorf("category with ID %d not found", id)
+		}
+		return model.CategoryOutputDTO{}, err
 	}
 
-	categoryDTO := model.CategoryDTO{
-		ID:           category.ID,
-		Name:         category.Name,
-		CustomFields: model.MapCustomFieldsModelToDTO(category.CustomFields),
-	}
-
-	return categoryDTO, nil
+	return *categoryWithCustomFields, nil
 }
 
 func (service *CategoryService) GetCategories() ([]model.CategoryDTO, error) {
@@ -59,9 +57,9 @@ func (service *CategoryService) GetCategories() ([]model.CategoryDTO, error) {
 	var categoriesDTO []model.CategoryDTO
 	for _, category := range categories {
 		categoriesDTO = append(categoriesDTO, model.CategoryDTO{
-			ID:           category.ID,
-			Name:         category.Name,
-			CustomFields: model.MapCustomFieldsModelToDTO(category.CustomFields),
+			ID:   category.ID,
+			Name: category.Name,
+			//CustomFields: model.MapCustomFieldsModelToDTO(category.CustomFields),
 		})
 	}
 
@@ -78,11 +76,11 @@ func (service *CategoryService) DeleteCategory(id uint, forceDelete bool) (bool,
 }
 
 func (service *CategoryService) UpdateCategory(id uint, categoryDTO model.CategoryDTO) (bool, error) {
-	customFields := model.MapCustomFieldsDTOToModel(categoryDTO.CustomFields)
+	//customFields := model.MapCustomFieldsDTOToModel(categoryDTO.CustomFields)
 
 	category := model.Category{
-		Name:         categoryDTO.Name,
-		CustomFields: customFields,
+		Name: categoryDTO.Name,
+		//CustomFields: customFields,
 	}
 
 	if _, err := service.repository.UpdateCategory(id, &category); err != nil {
