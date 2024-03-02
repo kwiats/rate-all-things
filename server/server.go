@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"sync"
@@ -19,27 +20,34 @@ type APIServer struct {
 }
 
 func NewAPIServer(listenAddr string, db *gorm.DB) *APIServer {
-	apiRouter := mux.NewRouter()
+	appRouter := mux.NewRouter()
 
-	router.HandleCategoryRouter(db, apiRouter)
+	api := appRouter.PathPrefix("/api").Subrouter()
+
+	handlersRouter := []func(*gorm.DB, *mux.Router, *sync.WaitGroup){
+		router.HandleCategoryRouter,
+	}
+	wg := sync.WaitGroup{}
+	wg.Add(len(handlersRouter))
+
+	for _, handler := range handlersRouter {
+		go handler(db, api, &wg)
+	}
+
+	wg.Wait()
 
 	return &APIServer{
 		listenAddr: listenAddr,
 		database:   db,
-		router:     apiRouter,
+		router:     appRouter,
 	}
 }
 
 func (s *APIServer) Run() {
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go s.startServer(&wg)
-	wg.Wait()
+	s.startServer()
 }
 
-func (s *APIServer) startServer(wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func (s *APIServer) startServer() {
 	srv := &http.Server{
 		Handler:      s.router,
 		Addr:         s.listenAddr,
@@ -48,7 +56,7 @@ func (s *APIServer) startServer(wg *sync.WaitGroup) {
 	}
 
 	log.Println("RAT api server running on port:", s.listenAddr)
-	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("Could not listen on %s: %v\n", s.listenAddr, err)
 	}
 }
