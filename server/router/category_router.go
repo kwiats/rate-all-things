@@ -19,7 +19,7 @@ func HandleCategoryRouter(db *gorm.DB, router *mux.Router) {
 	categoryService := service.NewCategoryService(categoryRepo)
 
 	router.HandleFunc("/category", handleCreateCategory(categoryService)).Methods("POST")
-	router.HandleFunc("/category/<id>", handleGetCategory(categoryService)).Methods("GET")
+	router.HandleFunc("/category/{id}", handleGetCategory(categoryService)).Methods("GET")
 	router.HandleFunc("/category", handleGetCategories(categoryService)).Methods("GET")
 
 }
