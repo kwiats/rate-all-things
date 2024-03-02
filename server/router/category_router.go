@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/kwiats/rate-all-things/internal/category/model"
@@ -14,14 +15,18 @@ import (
 	"gorm.io/gorm"
 )
 
-func HandleCategoryRouter(db *gorm.DB, router *mux.Router) {
+func HandleCategoryRouter(db *gorm.DB, router *mux.Router, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	categoryRouter := router.PathPrefix("/category").Subrouter()
 	categoryRepo := repository.NewCategoryRepository(db)
 	categoryService := service.NewCategoryService(categoryRepo)
 
-	router.HandleFunc("/category", handleCreateCategory(categoryService)).Methods("POST")
-	router.HandleFunc("/category/{id}", handleGetCategory(categoryService)).Methods("GET")
-	router.HandleFunc("/category", handleGetCategories(categoryService)).Methods("GET")
-
+	categoryRouter.HandleFunc("/", handleCreateCategory(categoryService)).Methods("POST")
+	categoryRouter.HandleFunc("/{id}/", handleGetCategory(categoryService)).Methods("GET")
+	categoryRouter.HandleFunc("/", handleGetCategories(categoryService)).Methods("GET")
+	categoryRouter.HandleFunc("/{id}/", handleDeleteCategory(categoryService)).Methods("DELETE")
+	categoryRouter.HandleFunc("/{id}/", handleUpdateCategory(categoryService)).Methods("PATCH")
 }
 
 func handleCreateCategory(categoryService *service.CategoryService) http.HandlerFunc {
@@ -49,6 +54,44 @@ func handleCreateCategory(categoryService *service.CategoryService) http.Handler
 			log.Printf("Error encoding JSON response: %v\n", err)
 			return
 		}
+	}
+}
+func handleDeleteCategory(categoryService *service.CategoryService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		idStr := vars["id"]
+
+		forceDeleteStr := r.URL.Query().Get("force")
+
+		forceDelete, err := strconv.ParseBool(forceDeleteStr)
+		if err != nil {
+			http.Error(w, "Cannot parse query params", http.StatusBadRequest)
+			log.Printf("Cannot parse query param: %v\n", err)
+			return
+		}
+		idCategory, err := strconv.Atoi(idStr)
+		if err != nil {
+			http.Error(w, "Uncorrected category id", http.StatusBadRequest)
+			log.Printf("Error parsing category ID: %v\n", err)
+			return
+		}
+
+		isDeleted, err := categoryService.DeleteCategory(uint(idCategory), forceDelete)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Category with ID %d not found: %v", idCategory, err), http.StatusNotFound)
+			log.Printf("Category not found: %v\n", err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		err = json.NewEncoder(w).Encode(isDeleted)
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			log.Printf("Error encoding JSON response: %v\n", err)
+			return
+		}
+
 	}
 }
 
@@ -81,12 +124,49 @@ func handleGetCategory(categoryService *service.CategoryService) http.HandlerFun
 
 	}
 }
+func handleUpdateCategory(categoryService *service.CategoryService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		idStr := vars["id"]
+		idCategory, err := strconv.Atoi(idStr)
+		if err != nil {
+			http.Error(w, "Uncorrected category id", http.StatusBadRequest)
+			log.Printf("Error parsing category ID: %v\n", err)
+			return
+		}
+
+		var categoryDTO model.CategoryDTO
+
+		if err := json.NewDecoder(r.Body).Decode(&categoryDTO); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.Printf("Error parsing request body to DTO: %v\n", err)
+			return
+		}
+
+		category, err := categoryService.UpdateCategory(uint(idCategory), categoryDTO)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Category with ID %d not found: %v", idCategory, err), http.StatusNotFound)
+			log.Printf("Category not found: %v\n", err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		err = json.NewEncoder(w).Encode(category)
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			log.Printf("Error encoding JSON response: %v\n", err)
+			return
+		}
+
+	}
+}
 
 func handleGetCategories(categoryService *service.CategoryService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		category, err := categoryService.GetCategories()
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Categories not found", err), http.StatusNotFound)
+			http.Error(w, fmt.Sprintf("Categories not found %v", err), http.StatusNotFound)
 			log.Printf("Categories not found: %v\n", err)
 			return
 		}
