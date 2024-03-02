@@ -9,6 +9,14 @@ type CategoryService struct {
 	repository repository.ICategoryRepository
 }
 
+type ICategoryService interface {
+	CreateCategory(model.CategoryDTO) (bool, error)
+	GetCategory(uint) (model.CategoryDTO, error)
+	GetCategories() ([]model.CategoryDTO, error)
+	DeleteCategory(uint, bool) (bool, error)
+	UpdateCategory(uint, model.CategoryDTO) (bool, error)
+}
+
 func NewCategoryService(repository repository.ICategoryRepository) *CategoryService {
 	return &CategoryService{repository: repository}
 }
@@ -60,8 +68,8 @@ func (service *CategoryService) GetCategories() ([]model.CategoryDTO, error) {
 	return categoriesDTO, nil
 }
 
-func (service *CategoryService) DeleteCategory(id uint) (bool, error) {
-	err := service.repository.DeleteCategoryByID(id)
+func (service *CategoryService) DeleteCategory(id uint, forceDelete bool) (bool, error) {
+	err := service.repository.DeleteCategoryByID(id, forceDelete)
 	if err != nil {
 		return false, err
 	}
