@@ -12,6 +12,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
-	server := server.NewAPIServer(":8000", db)
-	server.Run()
+	srv := server.NewAPIServer(":8000", db)
+	srv.Run()
 }
