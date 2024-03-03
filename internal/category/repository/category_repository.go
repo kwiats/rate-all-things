@@ -103,10 +103,10 @@ func (repo *CategoryRepository) UpdateCategory(id uint, category *model.Category
 	return &existingCategory, nil
 }
 
-func (repo *CategoryRepository) DeleteCategoryByID(id uint, forceDelete bool) error {
+func (repo *CategoryRepository) DeleteCategoryByID(id uint, force bool) error {
 	tx := repo.db.Begin()
 
-	if forceDelete {
+	if force {
 		if err := tx.Unscoped().Delete(&model.Category{}, id).Error; err != nil {
 			tx.Rollback()
 			return err
