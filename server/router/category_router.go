@@ -61,14 +61,18 @@ func handleDeleteCategory(categoryService *service.CategoryService) http.Handler
 		vars := mux.Vars(r)
 		idStr := vars["id"]
 
+		var forceDelete bool
 		forceDeleteStr := r.URL.Query().Get("force")
-
-		forceDelete, err := strconv.ParseBool(forceDeleteStr)
-		if err != nil {
-			http.Error(w, "Cannot parse query params", http.StatusBadRequest)
-			log.Printf("Cannot parse query param: %v\n", err)
-			return
+		if forceDeleteStr != "" {
+			var err error
+			forceDelete, err = strconv.ParseBool(forceDeleteStr)
+			if err != nil {
+				http.Error(w, "Cannot parse query params", http.StatusBadRequest)
+				log.Printf("Cannot parse query param: %v\n", err)
+				return
+			}
 		}
+
 		idCategory, err := strconv.Atoi(idStr)
 		if err != nil {
 			http.Error(w, "Uncorrected category id", http.StatusBadRequest)

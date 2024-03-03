@@ -104,14 +104,23 @@ func (repo *CategoryRepository) UpdateCategory(id uint, category *model.Category
 }
 
 func (repo *CategoryRepository) DeleteCategoryByID(id uint, forceDelete bool) error {
+	tx := repo.db.Begin()
+
 	if forceDelete {
-		if err := repo.db.Unscoped().Delete(&model.Category{}, id).Error; err != nil {
+		if err := tx.Unscoped().Delete(&model.Category{}, id).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+		if err := tx.Where("category_id = ?", id).Delete(&model.CategoryCustomField{}).Error; err != nil {
+			tx.Rollback()
 			return err
 		}
 	} else {
-		if err := repo.db.Delete(&model.Category{}, id).Error; err != nil {
+		if err := tx.Delete(&model.Category{}, id).Error; err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
-	return nil
+
+	return tx.Commit().Error
 }
