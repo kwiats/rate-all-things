@@ -11,10 +11,10 @@ type CategoryRepository struct {
 
 type ICategoryRepository interface {
 	CreateCategory(*model.Category) (*model.Category, error)
-	CreateCategoryWithCustomFields(*model.Category, *[]model.CategoryCustomField) (*model.Category, error)
+	CreateCategoryWithCustomFields(*model.Category, []*model.CategoryCustomField) (*model.Category, error)
 	GetCategoryByID(uint) (*model.CategoryOutputDTO, error)
 	GetAllCategories() ([]*model.Category, error)
-	UpdateCategory(uint, *model.Category) (*model.Category, error)
+	UpdateCategory(uint, *model.Category, []*model.CategoryCustomField) (*model.Category, error)
 	DeleteCategoryByID(uint, bool) error
 }
 
@@ -29,7 +29,7 @@ func (repo *CategoryRepository) CreateCategory(category *model.Category) (*model
 	return category, nil
 }
 
-func (repo *CategoryRepository) CreateCategoryWithCustomFields(category *model.Category, customFields *[]model.CategoryCustomField) (*model.Category, error) {
+func (repo *CategoryRepository) CreateCategoryWithCustomFields(category *model.Category, categoryCustomFields []*model.CategoryCustomField) (*model.Category, error) {
 	tx := repo.db.Begin()
 	if tx.Error != nil {
 		return nil, tx.Error
@@ -40,13 +40,23 @@ func (repo *CategoryRepository) CreateCategoryWithCustomFields(category *model.C
 		return nil, err
 	}
 
-	for i := range *customFields {
-		(*customFields)[i].CategoryID = category.ID
-	}
+	for i := range categoryCustomFields {
+		(categoryCustomFields)[i].CategoryID = category.ID
 
-	if err := tx.Create(&customFields).Error; err != nil {
-		tx.Rollback()
-		return nil, err
+		var customField model.CustomField
+		if err := tx.Where("id = ?", (categoryCustomFields)[i].CustomFieldID).First(&customField).Error; err == nil {
+			if (categoryCustomFields)[i].Settings == nil {
+				(categoryCustomFields)[i].Settings = customField.DefaultSettings
+			}
+		} else {
+			tx.Rollback()
+			return nil, err
+		}
+
+		if err := tx.Create(&(categoryCustomFields)[i]).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -70,7 +80,7 @@ func (repo *CategoryRepository) GetCategoryByID(id uint) (*model.CategoryOutputD
 
 	var customFieldOutputs []model.CustomFieldOutputDTO
 	if err := repo.db.Table("category_custom_fields").
-		Select("custom_fields.id as custom_field_id, custom_fields.type, category_custom_fields.title").
+		Select("category_custom_fields.id, custom_fields.id as custom_field_id, custom_fields.type, category_custom_fields.title, category_custom_fields.settings").
 		Joins("join custom_fields on custom_fields.id = category_custom_fields.custom_field_id").
 		Where("category_custom_fields.category_id = ?", id).
 		Scan(&customFieldOutputs).Error; err != nil {
@@ -90,13 +100,30 @@ func (repo *CategoryRepository) GetAllCategories() ([]*model.Category, error) {
 	return categories, nil
 }
 
-func (repo *CategoryRepository) UpdateCategory(id uint, category *model.Category) (*model.Category, error) {
+func (repo *CategoryRepository) UpdateCategory(id uint, category *model.Category, ccf []*model.CategoryCustomField) (*model.Category, error) {
+	tx := repo.db.Begin()
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
 	var existingCategory model.Category
-	if err := repo.db.First(&existingCategory, id).Error; err != nil {
+	if err := tx.First(&existingCategory, id).Error; err != nil {
+		return nil, err
+	}
+	if err := tx.Model(&existingCategory).Updates(category).Error; err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
-	if err := repo.db.Model(&existingCategory).Updates(category).Error; err != nil {
+	for _, field := range ccf {
+		if err := tx.Model(&model.CategoryCustomField{}).Where("id = ?", field.ID).Updates(field).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
