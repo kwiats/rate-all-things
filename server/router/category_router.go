@@ -139,15 +139,15 @@ func handleUpdateCategory(categoryService *service.CategoryService) http.Handler
 			return
 		}
 
-		var categoryDTO model.CategoryDTO
+		var updatedCategory model.UpdateCategoryDTO
 
-		if err := json.NewDecoder(r.Body).Decode(&categoryDTO); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&updatedCategory); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			log.Printf("Error parsing request body to DTO: %v\n", err)
 			return
 		}
 
-		category, err := categoryService.UpdateCategory(uint(idCategory), categoryDTO)
+		category, err := categoryService.UpdateCategory(uint(idCategory), updatedCategory)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Category with ID %d not found: %v", idCategory, err), http.StatusNotFound)
 			log.Printf("Category not found: %v\n", err)
