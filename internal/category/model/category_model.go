@@ -1,6 +1,9 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+)
 
 type Category struct {
 	gorm.Model
@@ -10,8 +13,9 @@ type Category struct {
 
 type CustomField struct {
 	gorm.Model
-	Type       string     `gorm:"type:varchar(100);not null"`
-	Categories []Category `gorm:"many2many:category_custom_fields;joinForeignKey:CustomFieldID;JoinReferences:CategoryID"`
+	Type            string         `gorm:"type:varchar(100);not null"`
+	DefaultSettings datatypes.JSON `gorm:"type:json"`
+	Categories      []Category     `gorm:"many2many:category_custom_fields;joinForeignKey:CustomFieldID;JoinReferences:CategoryID"`
 }
 
 type CategoryCustomField struct {
@@ -20,4 +24,5 @@ type CategoryCustomField struct {
 	CategoryID    uint
 	CustomFieldID uint
 	Title         string
+	Settings      datatypes.JSON `gorm:"type:json"`
 }

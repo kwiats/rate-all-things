@@ -1,5 +1,7 @@
 package model
 
+import "gorm.io/datatypes"
+
 type CategoryDTO struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
@@ -10,13 +12,21 @@ type CreateCategoryDTO struct {
 	CustomFields []CreateCustomFieldDTO `json:"customFields"`
 }
 
+type UpdateCategoryDTO struct {
+	Name         string                 `json:"name"`
+	CustomFields []CreateCustomFieldDTO `json:"customFields"`
+}
+
 type CustomFieldDTO struct {
-	Id   uint   `json:"id"`
-	Type string `json:"Type"`
+	Id              uint           `json:"id"`
+	Type            string         `json:"type"`
+	DefaultSettings datatypes.JSON `json:"defaultSettings"`
 }
 type CreateCustomFieldDTO struct {
-	CustomFieldId uint   `json:"customFieldId"`
-	Title         string `json:"Title"`
+	ID            uint           `json:"id"`
+	CustomFieldId uint           `json:"customFieldId"`
+	Title         string         `json:"Title"`
+	Settings      datatypes.JSON `json:"settings"`
 }
 
 type CategoryOutputDTO struct {
@@ -26,21 +36,24 @@ type CategoryOutputDTO struct {
 }
 
 type CustomFieldOutputDTO struct {
-	CustomFieldId uint   `json:"customFieldId"`
-	Type          string `json:"type"`
-	Title         string `json:"title"`
+	ID            uint           `json:"id"`
+	CustomFieldId uint           `json:"customFieldId"`
+	Type          string         `json:"type"`
+	Title         string         `json:"title"`
+	Settings      datatypes.JSON `json:"settings"`
 }
 
-func MapCCFToModel(categoryId uint, dtoFields []CreateCustomFieldDTO) []CategoryCustomField {
-	var categoryCustomFields []CategoryCustomField
+func MapCCFToModel(categoryId uint, dtoFields []CreateCustomFieldDTO) []*CategoryCustomField {
+	var categoryCustomFields []*CategoryCustomField
 
 	for _, field := range dtoFields {
 		categoryCustomField := CategoryCustomField{
 			CategoryID:    categoryId,
 			CustomFieldID: field.CustomFieldId,
 			Title:         field.Title,
+			Settings:      field.Settings,
 		}
-		categoryCustomFields = append(categoryCustomFields, categoryCustomField)
+		categoryCustomFields = append(categoryCustomFields, &categoryCustomField)
 	}
 
 	return categoryCustomFields
