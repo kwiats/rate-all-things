@@ -59,7 +59,6 @@ func (service *CategoryService) GetCategories() ([]model.CategoryDTO, error) {
 		categoriesDTO = append(categoriesDTO, model.CategoryDTO{
 			ID:   category.ID,
 			Name: category.Name,
-			//CustomFields: model.MapCustomFieldsModelToDTO(category.CustomFields),
 		})
 	}
 
@@ -76,11 +75,8 @@ func (service *CategoryService) DeleteCategory(id uint, forceDelete bool) (bool,
 }
 
 func (service *CategoryService) UpdateCategory(id uint, categoryDTO model.CategoryDTO) (bool, error) {
-	//customFields := model.MapCustomFieldsDTOToModel(categoryDTO.CustomFields)
-
 	category := model.Category{
 		Name: categoryDTO.Name,
-		//CustomFields: customFields,
 	}
 
 	if _, err := service.repository.UpdateCategory(id, &category); err != nil {
