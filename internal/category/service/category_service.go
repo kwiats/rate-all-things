@@ -29,7 +29,7 @@ func (service *CategoryService) CreateCategory(createCategoryDTO model.CreateCat
 		Name: createCategoryDTO.Name,
 	}
 	categoryCustomFields := model.MapCCFToModel(0, createCategoryDTO.CustomFields)
-	_, err := service.repository.CreateCategoryWithCustomFields(&category, &categoryCustomFields)
+	_, err := service.repository.CreateCategoryWithCustomFields(&category, categoryCustomFields)
 	if err != nil {
 		return false, err
 	}
@@ -74,12 +74,22 @@ func (service *CategoryService) DeleteCategory(id uint, forceDelete bool) (bool,
 	return true, nil
 }
 
-func (service *CategoryService) UpdateCategory(id uint, categoryDTO model.CategoryDTO) (bool, error) {
+func (service *CategoryService) UpdateCategory(id uint, updatedCategory model.UpdateCategoryDTO) (bool, error) {
 	category := model.Category{
-		Name: categoryDTO.Name,
+		Name: updatedCategory.Name,
+	}
+	var categoryCustomFields []*model.CategoryCustomField
+	for _, customField := range updatedCategory.CustomFields {
+		categoryCustomFields = append(categoryCustomFields, &model.CategoryCustomField{
+			ID:            customField.ID,
+			CustomFieldID: customField.CustomFieldId,
+			CategoryID:    id,
+			Title:         customField.Title,
+			Settings:      customField.Settings,
+		})
 	}
 
-	if _, err := service.repository.UpdateCategory(id, &category); err != nil {
+	if _, err := service.repository.UpdateCategory(id, &category, categoryCustomFields); err != nil {
 		return false, err
 	}
 

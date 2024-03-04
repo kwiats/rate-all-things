@@ -24,8 +24,8 @@ func NewCustomFieldService(repository repository.ICustomFieldRepository) *Custom
 func (service *CustomFieldService) CreateCustomField(customFieldDTO model.CustomFieldDTO) (bool, error) {
 
 	customField := model.CustomField{
-		//Name: customFieldDTO.Name,
-		Type: customFieldDTO.Type,
+		Type:            customFieldDTO.Type,
+		DefaultSettings: customFieldDTO.DefaultSettings,
 	}
 
 	if _, err := service.repository.CreateCustomField(&customField); err != nil {
@@ -57,8 +57,6 @@ func (service *CustomFieldService) GetCategories() ([]model.CustomFieldDTO, erro
 	var categoriesDTO []model.CustomFieldDTO
 	for _, customField := range categories {
 		categoriesDTO = append(categoriesDTO, model.CustomFieldDTO{
-			//ID:   customField.ID,
-			//Name: customField.Name,
 			Type: customField.Type,
 		})
 	}
