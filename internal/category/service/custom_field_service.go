@@ -12,7 +12,7 @@ type CustomFieldService struct {
 type ICustomFieldService interface {
 	CreateCustomField(model.CustomFieldDTO) (bool, error)
 	GetCustomField(uint) (model.CustomFieldDTO, error)
-	GetCategories() ([]model.CustomFieldDTO, error)
+	GetCustomFields() ([]model.CustomFieldDTO, error)
 	DeleteCustomField(uint, bool) (bool, error)
 	UpdateCustomField(uint, model.CustomFieldDTO) (bool, error)
 }
@@ -41,14 +41,14 @@ func (service *CustomFieldService) GetCustomField(id uint) (model.CustomFieldDTO
 	}
 
 	customFieldDTO := model.CustomFieldDTO{
-		//ID:   customField.ID,
-		Type: customField.Type,
+		Type:            customField.Type,
+		DefaultSettings: customField.DefaultSettings,
 	}
 
 	return customFieldDTO, nil
 }
 
-func (service *CustomFieldService) GetCategories() ([]model.CustomFieldDTO, error) {
+func (service *CustomFieldService) GetCustomFields() ([]model.CustomFieldDTO, error) {
 	categories, err := service.repository.GetAllCustomFields()
 	if err != nil {
 		return nil, err
@@ -57,7 +57,9 @@ func (service *CustomFieldService) GetCategories() ([]model.CustomFieldDTO, erro
 	var categoriesDTO []model.CustomFieldDTO
 	for _, customField := range categories {
 		categoriesDTO = append(categoriesDTO, model.CustomFieldDTO{
-			Type: customField.Type,
+			Id:              customField.ID,
+			Type:            customField.Type,
+			DefaultSettings: customField.DefaultSettings,
 		})
 	}
 
@@ -76,8 +78,8 @@ func (service *CustomFieldService) DeleteCustomField(id uint, forceDelete bool) 
 func (service *CustomFieldService) UpdateCustomField(id uint, customFieldDTO model.CustomFieldDTO) (bool, error) {
 
 	customField := model.CustomField{
-		//Name: customFieldDTO.Name,
-		Type: customFieldDTO.Type,
+		Type:            customFieldDTO.Type,
+		DefaultSettings: customFieldDTO.DefaultSettings,
 	}
 
 	if _, err := service.repository.UpdateCustomField(id, &customField); err != nil {
