@@ -1,7 +1,8 @@
 package database
 
 import (
-	category_model "github.com/kwiats/rate-all-things/internal/category/model"
+	categoryModel "github.com/kwiats/rate-all-things/internal/category/model"
+	reviewModel "github.com/kwiats/rate-all-things/internal/review/model"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -13,9 +14,10 @@ func InitializeDB() (*gorm.DB, error) {
 	}
 
 	err = db.AutoMigrate(
-		&category_model.Category{},
-		&category_model.CustomField{},
-		&category_model.CategoryCustomField{},
+		&reviewModel.Review{},
+		&categoryModel.Category{},
+		&categoryModel.CustomField{},
+		&categoryModel.CategoryCustomField{},
 	)
 	if err != nil {
 		return nil, err
