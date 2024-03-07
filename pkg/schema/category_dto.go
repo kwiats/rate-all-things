@@ -1,6 +1,9 @@
-package model
+package schema
 
-import "gorm.io/datatypes"
+import (
+	"github.com/kwiats/rate-all-things/pkg/model"
+	"gorm.io/datatypes"
+)
 
 type CategoryDTO struct {
 	ID   uint   `json:"id"`
@@ -43,11 +46,11 @@ type CustomFieldOutputDTO struct {
 	Settings      datatypes.JSON `json:"settings"`
 }
 
-func MapCCFToModel(categoryId uint, dtoFields []CreateCustomFieldDTO) []*CategoryCustomField {
-	var categoryCustomFields []*CategoryCustomField
+func MapCCFToModel(categoryId uint, dtoFields []CreateCustomFieldDTO) []*model.CategoryCustomField {
+	var categoryCustomFields []*model.CategoryCustomField
 
 	for _, field := range dtoFields {
-		categoryCustomField := CategoryCustomField{
+		categoryCustomField := model.CategoryCustomField{
 			CategoryID:    categoryId,
 			CustomFieldID: field.CustomFieldId,
 			Title:         field.Title,

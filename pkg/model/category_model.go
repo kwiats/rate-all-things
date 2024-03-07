@@ -11,16 +11,8 @@ type Category struct {
 	CustomFields []CustomField `gorm:"many2many:category_custom_fields;joinForeignKey:CategoryID;JoinReferences:CustomFieldID"`
 }
 
-type CustomField struct {
-	gorm.Model
-	Type            string         `gorm:"type:varchar(100);not null"`
-	DefaultSettings datatypes.JSON `gorm:"type:json"`
-	Categories      []Category     `gorm:"many2many:category_custom_fields;joinForeignKey:CustomFieldID;JoinReferences:CategoryID"`
-}
-
 type CategoryCustomField struct {
-	ID uint `gorm:"primaryKey;autoIncrement"`
-
+	ID            uint `gorm:"primaryKey;autoIncrement"`
 	CategoryID    uint
 	CustomFieldID uint
 	Title         string
