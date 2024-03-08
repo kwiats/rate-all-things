@@ -1,8 +1,9 @@
 package service
 
 import (
-	"github.com/kwiats/rate-all-things/internal/category/model"
-	"github.com/kwiats/rate-all-things/internal/category/repository"
+	"github.com/kwiats/rate-all-things/internal/custom-field/repository"
+	"github.com/kwiats/rate-all-things/pkg/model"
+	"github.com/kwiats/rate-all-things/pkg/schema"
 )
 
 type CustomFieldService struct {
@@ -10,18 +11,18 @@ type CustomFieldService struct {
 }
 
 type ICustomFieldService interface {
-	CreateCustomField(model.CustomFieldDTO) (bool, error)
-	GetCustomField(uint) (model.CustomFieldDTO, error)
-	GetCustomFields() ([]model.CustomFieldDTO, error)
+	CreateCustomField(schema.CustomFieldDTO) (bool, error)
+	GetCustomField(uint) (schema.CustomFieldDTO, error)
+	GetCustomFields() ([]schema.CustomFieldDTO, error)
 	DeleteCustomField(uint, bool) (bool, error)
-	UpdateCustomField(uint, model.CustomFieldDTO) (bool, error)
+	UpdateCustomField(uint, schema.CustomFieldDTO) (bool, error)
 }
 
 func NewCustomFieldService(repository repository.ICustomFieldRepository) *CustomFieldService {
 	return &CustomFieldService{repository: repository}
 }
 
-func (service *CustomFieldService) CreateCustomField(customFieldDTO model.CustomFieldDTO) (bool, error) {
+func (service *CustomFieldService) CreateCustomField(customFieldDTO schema.CustomFieldDTO) (bool, error) {
 
 	customField := model.CustomField{
 		Type:            customFieldDTO.Type,
@@ -34,13 +35,13 @@ func (service *CustomFieldService) CreateCustomField(customFieldDTO model.Custom
 	return true, nil
 }
 
-func (service *CustomFieldService) GetCustomField(id uint) (model.CustomFieldDTO, error) {
+func (service *CustomFieldService) GetCustomField(id uint) (schema.CustomFieldDTO, error) {
 	customField, err := service.repository.GetCustomFieldByID(id)
 	if err != nil {
-		return model.CustomFieldDTO{}, err
+		return schema.CustomFieldDTO{}, err
 	}
 
-	customFieldDTO := model.CustomFieldDTO{
+	customFieldDTO := schema.CustomFieldDTO{
 		Type:            customField.Type,
 		DefaultSettings: customField.DefaultSettings,
 	}
@@ -48,15 +49,15 @@ func (service *CustomFieldService) GetCustomField(id uint) (model.CustomFieldDTO
 	return customFieldDTO, nil
 }
 
-func (service *CustomFieldService) GetCustomFields() ([]model.CustomFieldDTO, error) {
+func (service *CustomFieldService) GetCustomFields() ([]schema.CustomFieldDTO, error) {
 	categories, err := service.repository.GetAllCustomFields()
 	if err != nil {
 		return nil, err
 	}
 
-	var categoriesDTO []model.CustomFieldDTO
+	var categoriesDTO []schema.CustomFieldDTO
 	for _, customField := range categories {
-		categoriesDTO = append(categoriesDTO, model.CustomFieldDTO{
+		categoriesDTO = append(categoriesDTO, schema.CustomFieldDTO{
 			Id:              customField.ID,
 			Type:            customField.Type,
 			DefaultSettings: customField.DefaultSettings,
@@ -75,7 +76,7 @@ func (service *CustomFieldService) DeleteCustomField(id uint, forceDelete bool) 
 	return true, nil
 }
 
-func (service *CustomFieldService) UpdateCustomField(id uint, customFieldDTO model.CustomFieldDTO) (bool, error) {
+func (service *CustomFieldService) UpdateCustomField(id uint, customFieldDTO schema.CustomFieldDTO) (bool, error) {
 
 	customField := model.CustomField{
 		Type:            customFieldDTO.Type,

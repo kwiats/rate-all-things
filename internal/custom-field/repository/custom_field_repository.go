@@ -1,7 +1,7 @@
 package repository
 
 import (
-	category_model "github.com/kwiats/rate-all-things/internal/category/model"
+	"github.com/kwiats/rate-all-things/pkg/model"
 	"gorm.io/gorm"
 )
 
@@ -10,10 +10,10 @@ type CustomFieldRepository struct {
 }
 
 type ICustomFieldRepository interface {
-	CreateCustomField(*category_model.CustomField) (*category_model.CustomField, error)
-	GetCustomFieldByID(uint) (*category_model.CustomField, error)
-	GetAllCustomFields() ([]*category_model.CustomField, error)
-	UpdateCustomField(uint, *category_model.CustomField) (*category_model.CustomField, error)
+	CreateCustomField(*model.CustomField) (*model.CustomField, error)
+	GetCustomFieldByID(uint) (*model.CustomField, error)
+	GetAllCustomFields() ([]*model.CustomField, error)
+	UpdateCustomField(uint, *model.CustomField) (*model.CustomField, error)
 	DeleteCustomFieldByID(uint, bool) error
 }
 
@@ -21,31 +21,31 @@ func NewCustomFieldRepository(db *gorm.DB) *CustomFieldRepository {
 	return &CustomFieldRepository{db: db}
 }
 
-func (repo *CustomFieldRepository) CreateCustomField(customField *category_model.CustomField) (*category_model.CustomField, error) {
+func (repo *CustomFieldRepository) CreateCustomField(customField *model.CustomField) (*model.CustomField, error) {
 	if err := repo.db.Create(customField).Error; err != nil {
 		return nil, err
 	}
 	return customField, nil
 }
 
-func (repo *CustomFieldRepository) GetCustomFieldByID(id uint) (*category_model.CustomField, error) {
-	var customField category_model.CustomField
+func (repo *CustomFieldRepository) GetCustomFieldByID(id uint) (*model.CustomField, error) {
+	var customField model.CustomField
 	if err := repo.db.First(&customField, id).Error; err != nil {
 		return nil, err
 	}
 	return &customField, nil
 }
 
-func (repo *CustomFieldRepository) GetAllCustomFields() ([]*category_model.CustomField, error) {
-	var categories []*category_model.CustomField
+func (repo *CustomFieldRepository) GetAllCustomFields() ([]*model.CustomField, error) {
+	var categories []*model.CustomField
 	if err := repo.db.Find(&categories).Error; err != nil {
 		return nil, err
 	}
 	return categories, nil
 }
 
-func (repo *CustomFieldRepository) UpdateCustomField(id uint, customField *category_model.CustomField) (*category_model.CustomField, error) {
-	var existingCustomField category_model.CustomField
+func (repo *CustomFieldRepository) UpdateCustomField(id uint, customField *model.CustomField) (*model.CustomField, error) {
+	var existingCustomField model.CustomField
 	if err := repo.db.First(&existingCustomField, id).Error; err != nil {
 		return nil, err
 	}
@@ -59,11 +59,11 @@ func (repo *CustomFieldRepository) UpdateCustomField(id uint, customField *categ
 
 func (repo *CustomFieldRepository) DeleteCustomFieldByID(id uint, forceDelete bool) error {
 	if forceDelete {
-		if err := repo.db.Unscoped().Delete(&category_model.CustomField{}, id).Error; err != nil {
+		if err := repo.db.Unscoped().Delete(&model.CustomField{}, id).Error; err != nil {
 			return err
 		}
 	} else {
-		if err := repo.db.Delete(&category_model.CustomField{}, id).Error; err != nil {
+		if err := repo.db.Delete(&model.CustomField{}, id).Error; err != nil {
 			return err
 		}
 	}
