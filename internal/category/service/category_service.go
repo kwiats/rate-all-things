@@ -3,25 +3,27 @@ package service
 import (
 	"errors"
 	"fmt"
-	"github.com/kwiats/rate-all-things/internal/category/repository"
+	"sync"
+
 	"github.com/kwiats/rate-all-things/pkg/model"
 	"github.com/kwiats/rate-all-things/pkg/schema"
 	"gorm.io/gorm"
 )
 
 type CategoryService struct {
-	repository repository.ICategoryRepository
+	repository ICategoryRepository
 }
 
-type ICategoryService interface {
-	CreateCategory(schema.CategoryDTO) (bool, error)
-	GetCategory(uint) (schema.CategoryDTO, error)
-	GetCategories() ([]schema.CategoryDTO, error)
-	DeleteCategory(uint, bool) (bool, error)
-	UpdateCategory(uint, schema.CategoryDTO) (bool, error)
+type ICategoryRepository interface {
+	CreateCategory(*model.Category) (*model.Category, error)
+	CreateCategoryWithCustomFields(*model.Category, []*model.CategoryCustomField) (*model.Category, error)
+	GetCategoryByID(uint) (*schema.CategoryOutputDTO, error)
+	GetAllCategories() ([]*model.Category, error)
+	UpdateCategory(uint, *model.Category, []*model.CategoryCustomField) (*model.Category, error)
+	DeleteCategoryByID(uint, bool) error
 }
 
-func NewCategoryService(repository repository.ICategoryRepository) *CategoryService {
+func NewCategoryService(repository ICategoryRepository) *CategoryService {
 	return &CategoryService{repository: repository}
 }
 
@@ -49,18 +51,35 @@ func (service *CategoryService) GetCategory(id uint) (schema.CategoryOutputDTO, 
 	return *categoryWithCustomFields, nil
 }
 
-func (service *CategoryService) GetCategories() ([]schema.CategoryDTO, error) {
+func (service *CategoryService) GetCategories() ([]*schema.CategoryDTO, error) {
 	categories, err := service.repository.GetAllCategories()
 	if err != nil {
 		return nil, err
 	}
 
-	var categoriesDTO []schema.CategoryDTO
+	categoriesDTO := make([]*schema.CategoryDTO, 0, len(categories))
+	channel := make(chan *schema.CategoryDTO, len(categories))
+
+	var wg sync.WaitGroup
+
 	for _, category := range categories {
-		categoriesDTO = append(categoriesDTO, schema.CategoryDTO{
-			ID:   category.ID,
-			Name: category.Name,
-		})
+		wg.Add(1)
+		go func(c *model.Category) {
+			defer wg.Done()
+			channel <- &schema.CategoryDTO{
+				ID:   c.ID,
+				Name: c.Name,
+			}
+		}(category)
+	}
+
+	go func() {
+		wg.Wait()
+		close(channel)
+	}()
+
+	for dto := range channel {
+		categoriesDTO = append(categoriesDTO, dto)
 	}
 
 	return categoriesDTO, nil

@@ -10,15 +10,6 @@ type CategoryRepository struct {
 	db *gorm.DB
 }
 
-type ICategoryRepository interface {
-	CreateCategory(*model.Category) (*model.Category, error)
-	CreateCategoryWithCustomFields(*model.Category, []*model.CategoryCustomField) (*model.Category, error)
-	GetCategoryByID(uint) (*schema.CategoryOutputDTO, error)
-	GetAllCategories() ([]*model.Category, error)
-	UpdateCategory(uint, *model.Category, []*model.CategoryCustomField) (*model.Category, error)
-	DeleteCategoryByID(uint, bool) error
-}
-
 func NewCategoryRepository(db *gorm.DB) *CategoryRepository {
 	return &CategoryRepository{db: db}
 }
