@@ -2,6 +2,8 @@ package server
 
 import (
 	"errors"
+	"github.com/kwiats/rate-all-things/pkg/config"
+	"github.com/kwiats/rate-all-things/server/middleware"
 	"log"
 	"net/http"
 	"sync"
@@ -17,16 +19,21 @@ type APIServer struct {
 	listenAddr string
 	database   *gorm.DB
 	router     *mux.Router
+	config     *config.Config
 }
 
-func NewAPIServer(listenAddr string, db *gorm.DB) *APIServer {
+func NewAPIServer(listenAddr string, db *gorm.DB, config *config.Config) *APIServer {
 	appRouter := mux.NewRouter()
 
 	api := appRouter.PathPrefix("/api").Subrouter()
 
+	api.Use(middleware.LoggingMiddleware)
+
 	handlersRouter := []func(*gorm.DB, *mux.Router, *sync.WaitGroup){
 		router.HandleCategoryRouter,
 		router.HandleCustomFieldRouter,
+		router.HandleAuthRouter,
+		router.HandleUserRouter,
 	}
 	wg := sync.WaitGroup{}
 	wg.Add(len(handlersRouter))
@@ -41,6 +48,7 @@ func NewAPIServer(listenAddr string, db *gorm.DB) *APIServer {
 		listenAddr: listenAddr,
 		database:   db,
 		router:     appRouter,
+		config:     config,
 	}
 }
 
