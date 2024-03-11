@@ -9,14 +9,6 @@ type CustomFieldRepository struct {
 	db *gorm.DB
 }
 
-type ICustomFieldRepository interface {
-	CreateCustomField(*model.CustomField) (*model.CustomField, error)
-	GetCustomFieldByID(uint) (*model.CustomField, error)
-	GetAllCustomFields() ([]*model.CustomField, error)
-	UpdateCustomField(uint, *model.CustomField) (*model.CustomField, error)
-	DeleteCustomFieldByID(uint, bool) error
-}
-
 func NewCustomFieldRepository(db *gorm.DB) *CustomFieldRepository {
 	return &CustomFieldRepository{db: db}
 }

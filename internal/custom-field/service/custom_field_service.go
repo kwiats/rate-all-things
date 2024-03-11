@@ -1,24 +1,25 @@
 package service
 
 import (
-	"github.com/kwiats/rate-all-things/internal/custom-field/repository"
+	"sync"
+
 	"github.com/kwiats/rate-all-things/pkg/model"
 	"github.com/kwiats/rate-all-things/pkg/schema"
 )
 
 type CustomFieldService struct {
-	repository repository.ICustomFieldRepository
+	repository ICustomFieldRepository
 }
 
-type ICustomFieldService interface {
-	CreateCustomField(schema.CustomFieldDTO) (bool, error)
-	GetCustomField(uint) (schema.CustomFieldDTO, error)
-	GetCustomFields() ([]schema.CustomFieldDTO, error)
-	DeleteCustomField(uint, bool) (bool, error)
-	UpdateCustomField(uint, schema.CustomFieldDTO) (bool, error)
+type ICustomFieldRepository interface {
+	CreateCustomField(*model.CustomField) (*model.CustomField, error)
+	GetCustomFieldByID(uint) (*model.CustomField, error)
+	GetAllCustomFields() ([]*model.CustomField, error)
+	UpdateCustomField(uint, *model.CustomField) (*model.CustomField, error)
+	DeleteCustomFieldByID(uint, bool) error
 }
 
-func NewCustomFieldService(repository repository.ICustomFieldRepository) *CustomFieldService {
+func NewCustomFieldService(repository ICustomFieldRepository) *CustomFieldService {
 	return &CustomFieldService{repository: repository}
 }
 
@@ -49,22 +50,40 @@ func (service *CustomFieldService) GetCustomField(id uint) (schema.CustomFieldDT
 	return customFieldDTO, nil
 }
 
-func (service *CustomFieldService) GetCustomFields() ([]schema.CustomFieldDTO, error) {
-	categories, err := service.repository.GetAllCustomFields()
+func (service *CustomFieldService) GetCustomFields() ([]*schema.CustomFieldDTO, error) {
+	customFields, err := service.repository.GetAllCustomFields()
 	if err != nil {
 		return nil, err
 	}
 
-	var categoriesDTO []schema.CustomFieldDTO
-	for _, customField := range categories {
-		categoriesDTO = append(categoriesDTO, schema.CustomFieldDTO{
-			Id:              customField.ID,
-			Type:            customField.Type,
-			DefaultSettings: customField.DefaultSettings,
-		})
+	lenghtCustomFields := len(customFields)
+	customFieldsDTO := make([]*schema.CustomFieldDTO, 0, lenghtCustomFields)
+	channel := make(chan *schema.CustomFieldDTO, lenghtCustomFields)
+
+	var wg sync.WaitGroup
+
+	for _, customField := range customFields {
+		wg.Add(1)
+		go func(cf *model.CustomField) {
+			defer wg.Done()
+			channel <- &schema.CustomFieldDTO{
+				Id:              cf.ID,
+				Type:            cf.Type,
+				DefaultSettings: cf.DefaultSettings,
+			}
+		}(customField)
 	}
 
-	return categoriesDTO, nil
+	go func() {
+		wg.Wait()
+		close(channel)
+	}()
+
+	for dto := range channel {
+		customFieldsDTO = append(customFieldsDTO, dto)
+	}
+
+	return customFieldsDTO, nil
 }
 
 func (service *CustomFieldService) DeleteCustomField(id uint, forceDelete bool) (bool, error) {
