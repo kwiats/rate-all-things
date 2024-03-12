@@ -2,12 +2,13 @@ package server
 
 import (
 	"errors"
-	"github.com/kwiats/rate-all-things/pkg/config"
-	"github.com/kwiats/rate-all-things/server/middleware"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/kwiats/rate-all-things/pkg/config"
+	"github.com/kwiats/rate-all-things/server/middleware"
 
 	"github.com/gorilla/mux"
 	"github.com/kwiats/rate-all-things/server/router"
