@@ -3,34 +3,36 @@ package router
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/kwiats/rate-all-things/internal/category/model"
-	"github.com/kwiats/rate-all-things/internal/category/repository"
-	"github.com/kwiats/rate-all-things/internal/category/service"
-	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"strconv"
 	"sync"
+
+	"github.com/gorilla/mux"
+	"github.com/kwiats/rate-all-things/internal/custom-field/repository"
+	"github.com/kwiats/rate-all-things/internal/custom-field/service"
+	"github.com/kwiats/rate-all-things/pkg/schema"
+	"github.com/kwiats/rate-all-things/server/middleware"
+	"gorm.io/gorm"
 )
 
-func HandleCustomFieldRouter(db *gorm.DB, router *mux.Router, wg *sync.WaitGroup) {
+func HandleCustomFieldRouter(db *gorm.DB, r *mux.Router, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	customFieldRouter := router.PathPrefix("/custom-field").Subrouter()
+	router := r.PathPrefix("/custom-field").Subrouter()
 	customFieldRepo := repository.NewCustomFieldRepository(db)
 	customFieldService := service.NewCustomFieldService(customFieldRepo)
 
-	customFieldRouter.HandleFunc("/", handleCreateCustomField(customFieldService)).Methods("POST")
-	customFieldRouter.HandleFunc("/{id}/", handleGetCustomField(customFieldService)).Methods("GET")
-	customFieldRouter.HandleFunc("/", handleGetCustomFields(customFieldService)).Methods("GET")
-	customFieldRouter.HandleFunc("/{id}/", handleDeleteCustomField(customFieldService)).Methods("DELETE")
-	customFieldRouter.HandleFunc("/{id}/", handleUpdateCustomField(customFieldService)).Methods("PATCH")
+	router.HandleFunc("/", middleware.AuthMiddleware(handleCreateCustomField(customFieldService))).Methods("POST")
+	router.HandleFunc("/{id}/", middleware.AuthMiddleware(handleGetCustomField(customFieldService))).Methods("GET")
+	router.HandleFunc("/", middleware.AuthMiddleware(handleGetCustomFields(customFieldService))).Methods("GET")
+	router.HandleFunc("/{id}/", middleware.AuthMiddleware(handleDeleteCustomField(customFieldService))).Methods("DELETE")
+	router.HandleFunc("/{id}/", middleware.AuthMiddleware(handleUpdateCustomField(customFieldService))).Methods("PATCH")
 }
 
 func handleCreateCustomField(customFieldService *service.CustomFieldService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var customFieldDTO model.CustomFieldDTO
+		var customFieldDTO schema.CustomFieldDTO
 
 		if err := json.NewDecoder(r.Body).Decode(&customFieldDTO); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -138,7 +140,7 @@ func handleUpdateCustomField(customFieldService *service.CustomFieldService) htt
 			return
 		}
 
-		var updatedCustomField model.CustomFieldDTO
+		var updatedCustomField schema.CustomFieldDTO
 
 		if err := json.NewDecoder(r.Body).Decode(&updatedCustomField); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)

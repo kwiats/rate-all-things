@@ -8,30 +8,32 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/kwiats/rate-all-things/pkg/schema"
+	"github.com/kwiats/rate-all-things/server/middleware"
+
 	"github.com/gorilla/mux"
-	"github.com/kwiats/rate-all-things/internal/category/model"
 	"github.com/kwiats/rate-all-things/internal/category/repository"
 	"github.com/kwiats/rate-all-things/internal/category/service"
 	"gorm.io/gorm"
 )
 
-func HandleCategoryRouter(db *gorm.DB, router *mux.Router, wg *sync.WaitGroup) {
+func HandleCategoryRouter(db *gorm.DB, r *mux.Router, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	categoryRouter := router.PathPrefix("/category").Subrouter()
+	router := r.PathPrefix("/category").Subrouter()
 	categoryRepo := repository.NewCategoryRepository(db)
 	categoryService := service.NewCategoryService(categoryRepo)
 
-	categoryRouter.HandleFunc("/", handleCreateCategory(categoryService)).Methods("POST")
-	categoryRouter.HandleFunc("/{id}/", handleGetCategory(categoryService)).Methods("GET")
-	categoryRouter.HandleFunc("/", handleGetCategories(categoryService)).Methods("GET")
-	categoryRouter.HandleFunc("/{id}/", handleDeleteCategory(categoryService)).Methods("DELETE")
-	categoryRouter.HandleFunc("/{id}/", handleUpdateCategory(categoryService)).Methods("PATCH")
+	router.HandleFunc("/", middleware.AuthMiddleware(handleCreateCategory(categoryService))).Methods("POST")
+	router.HandleFunc("/{id}/", middleware.AuthMiddleware(handleGetCategory(categoryService))).Methods("GET")
+	router.HandleFunc("/", middleware.AuthMiddleware(handleGetCategories(categoryService))).Methods("GET")
+	router.HandleFunc("/{id}/", middleware.AuthMiddleware(handleDeleteCategory(categoryService))).Methods("DELETE")
+	router.HandleFunc("/{id}/", middleware.AuthMiddleware(handleUpdateCategory(categoryService))).Methods("PATCH")
 }
 
 func handleCreateCategory(categoryService *service.CategoryService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var categoryDTO model.CreateCategoryDTO
+		var categoryDTO schema.CreateCategoryDTO
 
 		if err := json.NewDecoder(r.Body).Decode(&categoryDTO); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -139,7 +141,7 @@ func handleUpdateCategory(categoryService *service.CategoryService) http.Handler
 			return
 		}
 
-		var updatedCategory model.UpdateCategoryDTO
+		var updatedCategory schema.UpdateCategoryDTO
 
 		if err := json.NewDecoder(r.Body).Decode(&updatedCategory); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
