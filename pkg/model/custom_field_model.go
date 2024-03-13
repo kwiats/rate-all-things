@@ -7,7 +7,7 @@ import (
 
 type CustomField struct {
 	gorm.Model
-	Type            string         `gorm:"type:varchar(100);not null"`
-	DefaultSettings datatypes.JSON `gorm:"type:json"`
-	Categories      []Category     `gorm:"many2many:category_custom_fields;joinForeignKey:CustomFieldID;JoinReferences:CategoryID"`
+	Type                 string                // "textField", "fileField"
+	DefaultSettings      datatypes.JSON        // '{"defaultValue": "", "maxLength": 255}'
+	CategoryCustomFields []CategoryCustomField `gorm:"foreignKey:CustomFieldID"`
 }

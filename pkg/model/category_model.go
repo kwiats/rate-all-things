@@ -7,14 +7,13 @@ import (
 
 type Category struct {
 	gorm.Model
-	Name         string        `gorm:"type:varchar(100);not null;unique"`
-	CustomFields []CustomField `gorm:"many2many:category_custom_fields;joinForeignKey:CategoryID;JoinReferences:CustomFieldID"`
+	Name                 string
+	CategoryCustomFields []CategoryCustomField `gorm:"foreignKey:CategoryID"`
 }
-
 type CategoryCustomField struct {
-	ID            uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
 	CategoryID    uint
 	CustomFieldID uint
 	Title         string
-	Settings      datatypes.JSON `gorm:"type:json"`
+	Settings      datatypes.JSON
 }
