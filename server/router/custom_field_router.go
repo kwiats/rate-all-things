@@ -32,7 +32,7 @@ func HandleCustomFieldRouter(db *gorm.DB, r *mux.Router, wg *sync.WaitGroup) {
 
 func handleCreateCustomField(customFieldService *service.CustomFieldService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var customFieldDTO schema.CustomFieldDTO
+		var customFieldDTO schema.CreateCustomFieldDTO
 
 		if err := json.NewDecoder(r.Body).Decode(&customFieldDTO); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
