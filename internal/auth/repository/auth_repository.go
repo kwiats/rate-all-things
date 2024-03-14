@@ -9,10 +9,6 @@ type AuthRepository struct {
 	db *gorm.DB
 }
 
-type IAuthRepository interface {
-	GetUserByUsername(string) (*model.User, error)
-}
-
 func NewAuthRepository(db *gorm.DB) *AuthRepository {
 	return &AuthRepository{db: db}
 }
@@ -23,4 +19,10 @@ func (repo *AuthRepository) GetUserByUsername(username string) (*model.User, err
 		return nil, err
 	}
 	return &user, nil
+}
+func (repo *AuthRepository) SignIn(user *model.User) (*model.User, error) {
+	if err := repo.db.Create(user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
 }

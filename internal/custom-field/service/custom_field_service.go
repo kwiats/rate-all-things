@@ -19,11 +19,13 @@ type ICustomFieldRepository interface {
 	DeleteCustomFieldByID(uint, bool) error
 }
 
-func NewCustomFieldService(repository ICustomFieldRepository) *CustomFieldService {
+
+
+func NewCustomFieldService(repository ICustomFieldRepository) *CustomFieldService{
 	return &CustomFieldService{repository: repository}
 }
 
-func (service *CustomFieldService) CreateCustomField(customFieldDTO schema.CustomFieldDTO) (bool, error) {
+func (service *CustomFieldService) CreateCustomField(customFieldDTO schema.CreateCustomFieldDTO) (bool, error) {
 
 	customField := model.CustomField{
 		Type:            customFieldDTO.Type,
@@ -67,7 +69,7 @@ func (service *CustomFieldService) GetCustomFields() ([]*schema.CustomFieldDTO, 
 		go func(cf *model.CustomField) {
 			defer wg.Done()
 			channel <- &schema.CustomFieldDTO{
-				Id:              cf.ID,
+				ID:              cf.ID,
 				Type:            cf.Type,
 				DefaultSettings: cf.DefaultSettings,
 			}

@@ -17,7 +17,8 @@ type CategoryService struct {
 type ICategoryRepository interface {
 	CreateCategory(*model.Category) (*model.Category, error)
 	CreateCategoryWithCustomFields(*model.Category, []*model.CategoryCustomField) (*model.Category, error)
-	GetCategoryByID(uint) (*schema.CategoryOutputDTO, error)
+	GetCategoryByID(uint) (*model.Category, error)
+	GetCategoryCustomField(id uint) ([]*model.CategoryCustomField, error)
 	GetAllCategories() ([]*model.Category, error)
 	UpdateCategory(uint, *model.Category, []*model.CategoryCustomField) (*model.Category, error)
 	DeleteCategoryByID(uint, bool) error
@@ -39,16 +40,48 @@ func (service *CategoryService) CreateCategory(createCategoryDTO schema.CreateCa
 	return true, nil
 }
 
-func (service *CategoryService) GetCategory(id uint) (schema.CategoryOutputDTO, error) {
-	categoryWithCustomFields, err := service.repository.GetCategoryByID(id)
+func (service *CategoryService) GetCategory(id uint) (*schema.CategoryDTO, error) {
+	category, err := service.repository.GetCategoryByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return schema.CategoryOutputDTO{}, fmt.Errorf("category with ID %d not found", id)
+			return &schema.CategoryDTO{}, fmt.Errorf("category with ID %d not found", id)
 		}
-		return schema.CategoryOutputDTO{}, err
+		return &schema.CategoryDTO{}, err
 	}
 
-	return *categoryWithCustomFields, nil
+	categoryCustomFields, err := service.repository.GetCategoryCustomField(category.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &schema.CategoryDTO{}, fmt.Errorf("category with ID %d not found", id)
+		}
+		return &schema.CategoryDTO{}, err
+	}
+	ccfDTOs := make([]schema.CategoryCustomFieldDTO, 0, len(categoryCustomFields))
+	channel := make(chan schema.CategoryCustomFieldDTO, len(categoryCustomFields))
+	for _, ccf := range categoryCustomFields {
+		go func(data *model.CategoryCustomField) {
+			channel <- schema.CategoryCustomFieldDTO{
+				ID:            data.ID,
+				CategoryID:    data.CategoryID,
+				CustomFieldID: data.CustomFieldID,
+				Title:         data.Title,
+				Settings:      data.Settings,
+			}
+		}(ccf)
+	}
+	for i := 0; i < len(categoryCustomFields); i++ {
+		ccfDTO := <-channel
+		ccfDTOs = append(ccfDTOs, ccfDTO)
+	}
+	close(channel)
+
+	categoryDTO := schema.CategoryDTO{
+		ID:           category.ID,
+		Name:         category.Name,
+		CustomFields: ccfDTOs,
+	}
+
+	return &categoryDTO, nil
 }
 
 func (service *CategoryService) GetCategories() ([]*schema.CategoryDTO, error) {
@@ -101,8 +134,7 @@ func (service *CategoryService) UpdateCategory(id uint, updatedCategory schema.U
 	var categoryCustomFields []*model.CategoryCustomField
 	for _, customField := range updatedCategory.CustomFields {
 		categoryCustomFields = append(categoryCustomFields, &model.CategoryCustomField{
-			ID:            customField.ID,
-			CustomFieldID: customField.CustomFieldId,
+			CustomFieldID: customField.CustomFieldID,
 			CategoryID:    id,
 			Title:         customField.Title,
 			Settings:      customField.Settings,

@@ -16,6 +16,8 @@ type IUserRepository interface {
 	GetUserByUsername(string) (*model.User, error)
 	GetUserByID(uint) (*model.User, error)
 	GetUsers() ([]*model.User, error)
+	DeleteUser(uint) (bool, error)
+	UpdateUser(uint, *model.User) (*model.User, error)
 }
 
 func NewUserService(repository IUserRepository) *UserService {
@@ -100,11 +102,21 @@ func (service *UserService) GetUserByUsername(username string) (*schema.UserDTO,
 	}, nil
 }
 func (service *UserService) DeleteUser(userId uint, force bool) (bool, error) {
-	if force {
-		return false, nil
+	_, err := service.repository.DeleteUser(userId)
+	if err != nil {
+		return false, err
 	}
+
 	return true, nil
 }
-func (service *UserService) UpdateUser(user schema.UserUpdateDTO) (*schema.UserDTO, error) {
-	return nil, nil
+func (service *UserService) UpdateUser(id uint, userUpdate schema.UserUpdateDTO) (*schema.UserDTO, error) {
+	user := model.User{
+		Username: userUpdate.Username,
+	}
+	updatedUser, err := service.repository.UpdateUser(id, &user)
+	if err != nil {
+		return &schema.UserDTO{}, err
+	}
+
+	return &schema.UserDTO{Username: updatedUser.Username}, nil
 }

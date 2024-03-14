@@ -2,7 +2,6 @@ package repository
 
 import (
 	"github.com/kwiats/rate-all-things/pkg/model"
-	"github.com/kwiats/rate-all-things/pkg/schema"
 	"gorm.io/gorm"
 )
 
@@ -32,23 +31,23 @@ func (repo *CategoryRepository) CreateCategoryWithCustomFields(category *model.C
 		return nil, err
 	}
 
-	for i := range categoryCustomFields {
-		(categoryCustomFields)[i].CategoryID = category.ID
+	for _, cf := range categoryCustomFields {
+		cf.CategoryID = category.ID
 
 		var customField model.CustomField
-		if err := tx.Where("id = ?", (categoryCustomFields)[i].CustomFieldID).First(&customField).Error; err == nil {
-			if (categoryCustomFields)[i].Settings == nil {
-				(categoryCustomFields)[i].Settings = customField.DefaultSettings
-			}
-		} else {
+		if err := tx.Where("id = ?", cf.CustomFieldID).First(&customField).Error; err != nil {
 			tx.Rollback()
 			return nil, err
 		}
 
-		if err := tx.Create(&(categoryCustomFields)[i]).Error; err != nil {
-			tx.Rollback()
-			return nil, err
+		if cf.Settings == nil {
+			cf.Settings = customField.DefaultSettings
 		}
+	}
+
+	if err := tx.Create(&categoryCustomFields).Error; err != nil {
+		tx.Rollback()
+		return nil, err
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -58,30 +57,26 @@ func (repo *CategoryRepository) CreateCategoryWithCustomFields(category *model.C
 	return category, nil
 }
 
-func (repo *CategoryRepository) GetCategoryByID(id uint) (*schema.CategoryOutputDTO, error) {
+func (repo *CategoryRepository) GetCategoryByID(id uint) (*model.Category, error) {
 	var categoryModel model.Category
 
-	if err := repo.db.Preload("CustomFields").First(&categoryModel, id).Error; err != nil {
+	if err := repo.db.First(&categoryModel, id).Error; err != nil {
 		return nil, err
 	}
 
-	categoryDTO := schema.CategoryOutputDTO{
-		ID:   categoryModel.ID,
-		Name: categoryModel.Name,
-	}
+	return &categoryModel, nil
+}
 
-	var customFieldOutputs []schema.CustomFieldOutputDTO
+func (repo *CategoryRepository) GetCategoryCustomField(id uint) ([]*model.CategoryCustomField, error) {
+	var categoryCustomField []*model.CategoryCustomField
 	if err := repo.db.Table("category_custom_fields").
 		Select("category_custom_fields.id, custom_fields.id as custom_field_id, custom_fields.type, category_custom_fields.title, category_custom_fields.settings").
 		Joins("join custom_fields on custom_fields.id = category_custom_fields.custom_field_id").
 		Where("category_custom_fields.category_id = ?", id).
-		Scan(&customFieldOutputs).Error; err != nil {
+		Scan(&categoryCustomField).Error; err != nil {
 		return nil, err
 	}
-
-	categoryDTO.CustomFields = customFieldOutputs
-
-	return &categoryDTO, nil
+	return categoryCustomField, nil
 }
 
 func (repo *CategoryRepository) GetAllCategories() ([]*model.Category, error) {

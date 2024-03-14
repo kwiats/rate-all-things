@@ -9,6 +9,16 @@ type UserRepository struct {
 	db *gorm.DB
 }
 
+// DeleteUser implements service.IUserRepository.
+func (repo *UserRepository) DeleteUser(uint) (bool, error) {
+	panic("unimplemented")
+}
+
+// UpdateUser implements service.IUserRepository.
+func (repo *UserRepository) UpdateUser(uint, *model.User) (*model.User, error) {
+	panic("unimplemented")
+}
+
 func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }

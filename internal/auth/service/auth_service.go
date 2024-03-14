@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kwiats/rate-all-things/internal/auth/repository"
 	"github.com/kwiats/rate-all-things/pkg/auth"
 	"github.com/kwiats/rate-all-things/pkg/model"
 	"github.com/kwiats/rate-all-things/pkg/schema"
@@ -12,13 +11,14 @@ import (
 )
 
 type AuthService struct {
-	repository repository.IAuthRepository
+	repository IAuthRepository
 }
-type IAuthService interface {
-	CreateUser() (*model.User, error)
+type IAuthRepository interface {
+	GetUserByUsername(string) (*model.User, error)
+	SignIn(*model.User) (*model.User, error)
 }
 
-func NewAuthService(repository repository.IAuthRepository) *AuthService {
+func NewAuthService(repository IAuthRepository) *AuthService {
 	return &AuthService{repository: repository}
 }
 
@@ -44,4 +44,24 @@ func (service *AuthService) LoginUser(user schema.LoginUserDTO) (string, error) 
 	}
 
 	return accessToken, nil
+}
+
+func (service *AuthService) RegisterUser(userDTO schema.SignInDTO) (*schema.UserDTO, error) {
+	hashedPassword, _ := utils.GeneratePasswordFromString(userDTO.Password)
+
+	userDAO := model.User{
+		Username: userDTO.Username,
+		Email:    userDTO.Email,
+		Password: *hashedPassword,
+	}
+
+	user, err := service.repository.SignIn(&userDAO)
+	if err != nil {
+		return &schema.UserDTO{}, err
+	}
+	return &schema.UserDTO{
+		Id:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+	}, nil
 }
