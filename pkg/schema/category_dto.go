@@ -6,53 +6,52 @@ import (
 )
 
 type CategoryDTO struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
+	ID           uint                     `json:"id"`
+	Name         string                   `json:"name"`
+	CustomFields []CategoryCustomFieldDTO `json:"customFields,omitempty"`
 }
 
 type CreateCategoryDTO struct {
-	Name         string                 `json:"name"`
-	CustomFields []CreateCustomFieldDTO `json:"customFields"`
+	Name         string                   `json:"name"`
+	CustomFields []CreateCategoryFieldDTO `json:"customFields,omitempty"`
 }
 
 type UpdateCategoryDTO struct {
-	Name         string                 `json:"name"`
-	CustomFields []CreateCustomFieldDTO `json:"customFields"`
+	Name         string                   `json:"name"`
+	CustomFields []CreateCategoryFieldDTO `json:"customFields,omitempty"`
 }
 
 type CustomFieldDTO struct {
-	Id              uint           `json:"id"`
+	ID              uint           `json:"id"`
 	Type            string         `json:"type"`
 	DefaultSettings datatypes.JSON `json:"defaultSettings"`
 }
 type CreateCustomFieldDTO struct {
-	ID            uint           `json:"id"`
-	CustomFieldId uint           `json:"customFieldId"`
-	Title         string         `json:"Title"`
-	Settings      datatypes.JSON `json:"settings"`
+	Type            string         `json:"type"`
+	DefaultSettings datatypes.JSON `json:"defaultSettings"`
 }
 
-type CategoryOutputDTO struct {
-	ID           uint                   `json:"id"`
-	Name         string                 `json:"name"`
-	CustomFields []CustomFieldOutputDTO `json:"customFields"`
-}
-
-type CustomFieldOutputDTO struct {
-	ID            uint           `json:"id"`
-	CustomFieldId uint           `json:"customFieldId"`
-	Type          string         `json:"type"`
+type CreateCategoryFieldDTO struct {
+	CustomFieldID uint           `json:"customFieldId"`
 	Title         string         `json:"title"`
-	Settings      datatypes.JSON `json:"settings"`
+	Settings      datatypes.JSON `json:"settings,omitempty"`
 }
 
-func MapCCFToModel(categoryId uint, dtoFields []CreateCustomFieldDTO) []*model.CategoryCustomField {
+type CategoryCustomFieldDTO struct {
+	ID            uint           `json:"id"`
+	CategoryID    uint           `json:"categoryId"`
+	CustomFieldID uint           `json:"customFieldId"`
+	Title         string         `json:"title"`
+	Settings      datatypes.JSON `json:"settings,omitempty"`
+}
+
+func MapCCFToModel(categoryId uint, dtoFields []CreateCategoryFieldDTO) []*model.CategoryCustomField {
 	var categoryCustomFields []*model.CategoryCustomField
 
 	for _, field := range dtoFields {
 		categoryCustomField := model.CategoryCustomField{
 			CategoryID:    categoryId,
-			CustomFieldID: field.CustomFieldId,
+			CustomFieldID: field.CustomFieldID,
 			Title:         field.Title,
 			Settings:      field.Settings,
 		}
@@ -61,23 +60,3 @@ func MapCCFToModel(categoryId uint, dtoFields []CreateCustomFieldDTO) []*model.C
 
 	return categoryCustomFields
 }
-
-//func MapCustomFieldsDTOToModel(customFieldsDTO []CustomFieldDTO) []CustomField {
-//	var customFields []CustomField
-//	for _, cfDTO := range customFieldsDTO {
-//		customFields = append(customFields, CustomField{
-//			: cfDTO.CustomFieldId,
-//		})
-//	}
-//	return customFields
-//}
-
-//func MapCustomFieldsModelToDTO(CustomFields []CustomField) []CustomFieldDTO {
-//	var customFieldsDTO []CustomFieldDTO
-//	for _, cf := range CustomFields {
-//		customFieldsDTO = append(customFieldsDTO, CustomFieldDTO{
-//			Type: cf.Type,
-//		})
-//	}
-//	return customFieldsDTO
-//}
