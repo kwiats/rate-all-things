@@ -2,18 +2,20 @@ package config
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Environment struct {
-	Host     string
-	User     string
-	Password string
-	DBName   string
-	Port     string
-	SslMode  string
-	TimeZone string
+	Host      string
+	User      string
+	Password  string
+	DBName    string
+	Port      string
+	SslMode   string
+	TimeZone  string
+	SecretKey string
 }
 
 type Config struct {
@@ -30,13 +32,14 @@ func NewConfiguration() (*Config, error) {
 		return nil, err
 	}
 	envs := Environment{
-		Host:     os.Getenv("HOST"),
-		User:     os.Getenv("USER"),
-		Password: os.Getenv("PASSWORD"),
-		DBName:   os.Getenv("DBNAME"),
-		Port:     os.Getenv("PORT"),
-		SslMode:  os.Getenv("SSLMODE"),
-		TimeZone: os.Getenv("TIMEZONE"),
+		Host:      os.Getenv("POSTGRES_HOST"),
+		User:      os.Getenv("POSTGRES_USER"),
+		Password:  os.Getenv("POSTGRES_PASSWORD"),
+		DBName:    os.Getenv("POSTGRES_NAME"),
+		Port:      os.Getenv("POSTGRES_PORT"),
+		SslMode:   os.Getenv("SSLMODE"),
+		TimeZone:  os.Getenv("TIMEZONE"),
+		SecretKey: os.Getenv("SECRET_KEY"),
 	}
 
 	return &Config{Envs: envs}, nil
@@ -46,3 +49,11 @@ func (c *Config) GetDBConnectionUri() string {
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		c.Envs.Host, c.Envs.User, c.Envs.Password, c.Envs.DBName, c.Envs.Port, c.Envs.SslMode)
 }
+
+func (c *Config) GetSecretKey() string {
+	return c.Envs.SecretKey
+}
+
+
+
+
