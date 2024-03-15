@@ -38,9 +38,10 @@ type CreateCategoryFieldDTO struct {
 }
 
 type CategoryCustomFieldDTO struct {
-	ID            uint           `json:"id"`
-	CategoryID    uint           `json:"categoryId"`
-	CustomFieldID uint           `json:"customFieldId"`
+	ID            uint           `json:"id,omitempty"`
+	CategoryID    uint           `json:"categoryId,omitempty"`
+	CustomFieldID uint           `json:"customFieldId,omitempty"`
+	Type          string         `json:"type,omitempty"`
 	Title         string         `json:"title"`
 	Settings      datatypes.JSON `json:"settings,omitempty"`
 }
