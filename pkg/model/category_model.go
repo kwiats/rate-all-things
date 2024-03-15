@@ -14,6 +14,7 @@ type CategoryCustomField struct {
 	gorm.Model
 	CategoryID    uint
 	CustomFieldID uint
+	CustomField   CustomField
 	Title         string
 	Settings      datatypes.JSON
 }

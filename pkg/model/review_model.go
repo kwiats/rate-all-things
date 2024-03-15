@@ -31,3 +31,5 @@ type ReviewItemData struct {
 	CategoryCustomField   CategoryCustomField
 	Value                 datatypes.JSON
 }
+
+
