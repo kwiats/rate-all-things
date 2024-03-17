@@ -1,8 +1,8 @@
 build:
-	@go build -o bin/rate-all-things cmd/rate-all-things/main.go
+	@go build -o bin/tit cmd/tit/main.go
 
 run: build
-	@./bin/rate-all-things
+	@./bin/tit
 
 test: 
 	@go test -v ./...
