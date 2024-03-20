@@ -18,6 +18,8 @@ func InitializeDB(connectionUri string) (*gorm.DB, error) {
 
 	err = db.AutoMigrate(
 		&model.User{},
+		&model.Message{},
+		&model.Message{},
 	)
 	if err != nil {
 		log.Printf("Failed to auto-migrate database models: %v\n", err)
