@@ -8,7 +8,7 @@ function ChatRoom({ chatId, ws, sub }) {
 
   useEffect(() => {
     fetchMessages();
-    const handleMessage = (event: { data: string }) => {
+    const handleMessage = (event: { data: string; }) => {
       const data: Message = JSON.parse(event.data);
       setMessages((prevMessages) => [...prevMessages, data]);
     };

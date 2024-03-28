@@ -14,9 +14,7 @@ function ChatApp() {
   const [sub, setSub] = useState(null);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const token = useParams();
-
   useEffect(() => {
-    console.log(chats);
     if (token) {
       const decoded = jwtDecode(token.token);
       if (decoded.sub) {
@@ -24,11 +22,15 @@ function ChatApp() {
         fetchChats(decoded.sub);
       }
     }
+  }, []);
 
+  useEffect(() => {
     const webSocket = new WebSocket("ws://localhost:8080/ws/");
 
     webSocket.onopen = () => {
       console.log("WebSocket Connected");
+      console.log(chats);
+
       if (token) {
         webSocket.send(JSON.stringify({ token: `Bearer ${token.token}` }));
       }
@@ -54,7 +56,7 @@ function ChatApp() {
     return () => {
       webSocket.close();
     };
-  }, [token]);
+  }, [chats]);
 
   const fetchChats = async (userId: number) => {
     try {
@@ -70,9 +72,11 @@ function ChatApp() {
   };
 
   const updateChats = (message: Message) => {
+    console.log("message", message);
     console.log("Before update", chats);
 
-    const updatedChats = chats.map((chat: Chat) => {
+    const updatedChats = chats?.map((chat: Chat) => {
+      console.log("dupa", chat);
       const chatLastMessageDate = new Date(chat.last_message.created_at);
       const incomingMessageDate = new Date(message.created_at);
       if (
