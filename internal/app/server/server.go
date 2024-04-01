@@ -7,9 +7,12 @@ import (
 	"sync"
 	"time"
 	"tit/internal/app/middleware"
+	"tit/internal/auth"
+	"tit/internal/chat"
 	"tit/internal/config"
-	"tit/internal/router"
+	"tit/internal/user"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 )
@@ -25,10 +28,16 @@ func NewServer(listenAddr string, db *gorm.DB, config *config.Config) *Server {
 	appRouter := mux.NewRouter()
 	appRouter.Use(middleware.LoggingMiddleware)
 
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+
+	appRouter.Use(handlers.CORS(originsOk, headersOk, methodsOk))
 	handlersRouter := []func(*gorm.DB, *mux.Router, *sync.WaitGroup){
-		router.HandleUserRouter,
-		router.HandleWebSocket,
-		router.HandleAuthRouter,
+		user.HandleUserRouter,
+		chat.HandleWebSocketRouter,
+		chat.HandleChatRouter,
+		auth.HandleAuthRouter,
 	}
 	wg := sync.WaitGroup{}
 	wg.Add(len(handlersRouter))
