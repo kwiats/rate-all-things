@@ -4,33 +4,46 @@ import { Chat } from "../../../models/chats";
 import { Message } from "../../../models/message";
 import ChatList from "./chatList";
 import ChatRoom from "./chatRoom";
+import { getToken, getUserid } from "../../../services/auth.service";
+import { initializeWebSocket } from "../../../services/websocket.service";
+import { fetchChats } from "../../../services/chat.service";
 
 function ChatApp() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<number>();
   const [userId, setUserId] = useState<number>();
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [filteredChats, setFilteredChats] = useState<Chat[]>([]);
 
   useEffect(() => {
-    const user_id_str = localStorage.getItem("user_id");
-    if (user_id_str) {
-      const userId = parseInt(user_id_str);
+    const userId = getUserid();
+    if (userId) {
       setUserId(userId);
-      fetchChats(userId);
+      getChats(userId);
     }
 
-    const webSocket = new WebSocket("ws://localhost:8080/ws/");
-    webSocket.onopen = () => {
-      console.log("WebSocket Connected");
-      const token = localStorage.getItem("token");
-      if (token) {
-        webSocket.send(JSON.stringify({ token: `Bearer ${token}` }));
-      }
-    };
+    const token = getToken();
+    const webSocket = initializeWebSocket(token);
     setWs(webSocket);
 
-    return () => webSocket.close();
+    return () => {
+      if (webSocket) {
+        webSocket.close();
+      }
+    };
   }, []);
+
+  const filterChats = (searchTerm) => {
+    if (!searchTerm) {
+      setFilteredChats(chats);
+      return;
+    }
+
+    const searchId = parseInt(searchTerm, 10);
+    const filtered = chats.filter((chat) => chat.id === searchId);
+
+    setFilteredChats(filtered);
+  };
 
   useEffect(() => {
     if (ws) {
@@ -50,12 +63,11 @@ function ChatApp() {
     }
   }, [ws]);
 
-  const fetchChats = async (userId: number) => {
+  const getChats = async (userId: number) => {
     try {
-      const response = await axios.get(
-        `http://localhost:8080/api/chat/?userId=${userId}`
-      );
-      setChats(response.data);
+      const response = await fetchChats(userId);
+      setChats(response);
+      setFilteredChats(response);
     } catch (error) {
       console.error("Failed to fetch chats", error);
     }
@@ -91,7 +103,11 @@ function ChatApp() {
           <div></div>
         </div>
         <div className="flex flex-col h-[calc(100vh-15rem)]">
-          <ChatList chats={chats} onSelectChat={handleSelectChat} />
+          <ChatList
+            chats={filteredChats}
+            onSelectChat={handleSelectChat}
+            filterChats={filterChats}
+          />
           {selectedChatId && <ChatRoom chatId={selectedChatId} ws={ws} />}
         </div>
       </div>

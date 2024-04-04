@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Message } from "../../models/message";
+import { Message } from "../../../models/message";
 
 function ChatRoom({ chatId, ws }) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -8,7 +8,6 @@ function ChatRoom({ chatId, ws }) {
   const [userId, setUserId] = useState<number | null>(null); // State to hold the user ID
 
   useEffect(() => {
-    // Fetching user ID from Local Storage
     const storedUserId = localStorage.getItem("user_id");
     if (storedUserId) {
       setUserId(parseInt(storedUserId));
@@ -19,7 +18,6 @@ function ChatRoom({ chatId, ws }) {
     const handleMessage = (event: { data: string }) => {
       const data: Message = JSON.parse(event.data);
       if (data.chat === chatId) {
-        // Ensure message belongs to the current chat
         setMessages((prevMessages) => [...prevMessages, data]);
       }
     };
@@ -34,10 +32,18 @@ function ChatRoom({ chatId, ws }) {
       const response = await axios.get(
         `http://localhost:8080/api/chat/${chatId}/messages`
       );
-      setMessages(response.data);
+      const sortedMessages = sortMessagesByCreatedAt(response.data);
+      setMessages(sortedMessages);
     } catch (error) {
       console.error("Failed to fetch messages", error);
     }
+  };
+
+  const sortMessagesByCreatedAt = (messages: Message[]) => {
+    return messages.sort(
+      (a: Message, b: Message) =>
+        new Date(a.created_at) - new Date(b.created_at)
+    );
   };
 
   const sendMessage = () => {

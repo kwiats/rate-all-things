@@ -1,10 +1,10 @@
+import { ChangeEvent } from "react";
 import { Chat } from "../../../models/chats";
 
-function ChatList({ chats, onSelectChat }) {
-  function handleSearch(event: ChangeEvent<HTMLInputElement>): void {
-    throw new Error("Function not implemented.");
-  }
-
+function ChatList({ chats, onSelectChat, filterChats }) {
+  const handleSearch = (event) => {
+    filterChats(event.target.value.trim());
+  };
   return (
     <div className="flex items-center p-4">
       <input
@@ -14,7 +14,7 @@ function ChatList({ chats, onSelectChat }) {
         onChange={handleSearch}
       />
       <div className="flex overflow-x-auto p-4 space-x-4">
-        {chats.map((chat) => (
+        {chats.map((chat: Chat) => (
           <button
             key={chat.id}
             className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center"
