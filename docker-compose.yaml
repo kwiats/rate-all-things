@@ -1,4 +1,23 @@
+version: '3.8'
+
 services:
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: ./tit
+    ports:
+      - "8080:8080"
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   db:
     image: postgres:latest
     restart: always
@@ -15,5 +34,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  react-app:
+    build: 
+      context: ./web 
+      dockerfile: Dockerfile 
+    volumes:
+      - ./web:/app  
+    ports:
+      - "8082:8082"
+    environment:
+      - NODE_ENV=development 
+    depends_on:
+      - api
+
 volumes:
-  db-data:
+  db-data: 
+    name: db-data
+    driver: local
