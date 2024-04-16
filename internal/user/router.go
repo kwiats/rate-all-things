@@ -1,8 +1,10 @@
 package user
 
 import (
+	"log"
 	"sync"
 	"tit/internal/app/middleware"
+	"tit/internal/config"
 
 	"tit/pkg/media"
 
@@ -16,7 +18,14 @@ func HandleUserRouter(db *gorm.DB, r *mux.Router, wg *sync.WaitGroup) {
 
 	router := r.PathPrefix("/api/user").Subrouter()
 	userRepo := NewUserRepository(db)
-	localStorage := media.NewBlobStorage("uploads")
+	settings, err := config.NewConfiguration()
+	if err != nil {
+		log.Fatalf("failed to load config file: %v", err)
+	}
+	localStorage, err := media.NewMinioBlobStorage(settings.Envs.MinioHost, settings.Envs.MinioAccessKey, settings.Envs.MinioSecretAccessKey, settings.Envs.MinioIsSecure)
+	if err != nil {
+		log.Fatal(err)
+	}
 	storage := media.NewMediaService(localStorage)
 	userService := NewUserService(userRepo, storage)
 
