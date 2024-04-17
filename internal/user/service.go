@@ -28,7 +28,7 @@ func NewUserService(repository IUserRepository, blobStorage media.IBlobStorage) 
 func (service *UserService) CreateUser(user UserCreateDTO, profilePicture *multipart.FileHeader) (*UserDTO, error) {
 	hashedPassword, _ := util.GeneratePasswordFromString(user.Password)
 
-	pathToProfilePicture, err := service.storage.SaveFile(profilePicture)
+	pathToProfilePicture, err := service.storage.SaveFile(profilePicture, "")
 	if err != nil {
 		return nil, err
 	}
