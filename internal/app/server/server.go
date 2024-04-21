@@ -12,15 +12,15 @@ import (
 	"tit/internal/config"
 	"tit/internal/user"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"gorm.io/gorm"
 )
 
 type Server struct {
 	listenAddr string
 	database   *gorm.DB
-	router     *mux.Router
+	router     http.Handler
 	config     *config.Config
 }
 
@@ -28,11 +28,12 @@ func NewServer(listenAddr string, db *gorm.DB, config *config.Config) *Server {
 	appRouter := mux.NewRouter()
 	appRouter.Use(middleware.LoggingMiddleware)
 
-	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
-	originsOk := handlers.AllowedOrigins([]string{"*"})
-	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
-
-	appRouter.Use(handlers.CORS(originsOk, headersOk, methodsOk))
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{config.Envs.AllowedDomains},
+		AllowCredentials: true,
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	})
 	handlersRouter := []func(*gorm.DB, *mux.Router, *sync.WaitGroup){
 		user.HandleUserRouter,
 		chat.HandleWebSocketRouter,
@@ -51,7 +52,7 @@ func NewServer(listenAddr string, db *gorm.DB, config *config.Config) *Server {
 	return &Server{
 		listenAddr: listenAddr,
 		database:   db,
-		router:     appRouter,
+		router:     c.Handler(appRouter),
 		config:     config,
 	}
 }
