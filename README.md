@@ -1,5 +1,7 @@
 # RAT - voice messanger 
 
+![logo](logo.webp)
+
 > Note: The primary objective of this project is to learning and experimentation with Go programming. Initially conceived without a concrete direction, the project has now pivoted towards a more focused idea: developing a voice chat application. This shift is part of an effort to streamline the project's scope and avoid overengineering, allowing for a more targeted learning experience.
 
 ## Overview
