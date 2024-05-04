@@ -1,11 +1,13 @@
 package chat
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"tit/internal/auth"
+	"tit/internal/user"
 	"tit/pkg/common"
 
 	"github.com/gorilla/mux"
@@ -121,5 +123,36 @@ func HandleGetChats(chatService *ChatService) http.HandlerFunc {
 		}
 
 		common.WriteJSON(w, http.StatusOK, chats)
+	}
+}
+
+func HandleCreateChat(chatService *ChatService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var chatDTO ChatDTO
+		if err := json.NewDecoder(r.Body).Decode(&chatDTO); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		tokenString := r.Header.Get("Authorization")
+
+		userInfo, ok, _ := auth.GetUserInfoFromToken(tokenString)
+		if !ok {
+			http.Error(w, "Invalid token", http.StatusBadRequest)
+			return
+		}
+
+		user := user.UserDTO{
+			Id:       userInfo.UserID,
+			Username: userInfo.Username,
+		}
+		chatDTO.Users = append(chatDTO.Users, user)
+
+		createdChat, err := chatService.GetOrCreateChat(chatDTO)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		common.WriteJSON(w, http.StatusCreated, createdChat)
 	}
 }
