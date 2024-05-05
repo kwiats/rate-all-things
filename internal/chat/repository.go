@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"fmt"
 	"time"
 	"tit/internal/db/model"
 
@@ -31,6 +32,7 @@ func (r *ChatRepository) GetUserChats(userID uint) ([]*model.Chat, error) {
 
 	return chats, nil
 }
+
 func (r *ChatRepository) GetLastMessage(chatID uint) (*model.Message, error) {
 	var message model.Message
 
@@ -50,6 +52,34 @@ func (repo *ChatRepository) GetChatByID(id uint) (*model.Chat, error) {
 	}
 	return &chat, nil
 }
+
+func (repo *ChatRepository) FindChatForUserIds(userIds []uint) (*model.Chat, error) {
+	var chat model.Chat
+
+	condition := fmt.Sprintf("cu.user_id = %d", userIds[0])
+
+	for i := 1; i < len(userIds); i++ {
+		condition += fmt.Sprintf(" OR cu.user_id = %d", userIds[i])
+	}
+
+	result := repo.db.
+		Model(&model.Chat{}).
+		Joins("JOIN chat_users cu ON chats.id = cu.chat_id").
+		Where(condition).
+		Group("chats.id").
+		Having("COUNT(DISTINCT cu.user_id) = ?", len(userIds)).
+		First(&chat)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			// Handle not found error explicitly if necessary
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+
+	return &chat, nil
+}
+
 func (repo *ChatRepository) SignAsReadBy(messageID uint, userID uint) (bool, error) {
 	var exists int64
 	repo.db.Model(&model.MessageRead{}).Where("message_id = ? AND user_id = ?", messageID, userID).Count(&exists)
