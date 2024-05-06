@@ -27,5 +27,6 @@ func HandleChatRouter(db *gorm.DB, r *mux.Router, wg *sync.WaitGroup) {
 
 	router.HandleFunc("/{id}/messages", HandleGetMessages(chatService)).Methods("GET")
 	router.HandleFunc("/", HandleGetChats(chatService)).Methods("GET")
+	router.HandleFunc("/", HandleCreateChat(chatService)).Methods("POST")
 
 }
