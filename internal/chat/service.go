@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"errors"
 	"log"
 	"tit/internal/db/model"
 	"tit/internal/user"
@@ -16,6 +17,7 @@ type IChatRepository interface {
 	CreateChat(*model.Chat) (*model.Chat, error)
 	StoreMessage(*model.Message) (*model.Message, error)
 	GetChatByID(uint) (*model.Chat, error)
+	FindChatForUserIds(userIds []uint) (*model.Chat, error)
 	GetUserChats(uint) ([]*model.Chat, error)
 	SignAsReadBy(uint, uint) (bool, error)
 	GetLastMessage(uint) (*model.Message, error)
@@ -26,27 +28,29 @@ func NewChatService(repository IChatRepository) *ChatService {
 	return &ChatService{repository: repository}
 }
 
-func (service *ChatService) CreateChat(chat ChatDTO) (*ChatDTO, error) {
+func (service *ChatService) GetOrCreateChat(chat ChatDTO) (*ChatDTO, error) {
 	users := make([]model.User, len(chat.Users))
+	userIds := make([]uint, len(chat.Users))
+	
 	for i, userDTO := range chat.Users {
 		users[i] = model.User{Model: &gorm.Model{ID: userDTO.Id}, Username: userDTO.Username}
+		userIds[i] = userDTO.Id
 	}
 
-	chatdao := &model.Chat{
-		Users: users,
+	existingChat, err := service.repository.FindChatForUserIds(userIds)
+	if err == nil && existingChat != nil {
+		return convertToChatDTO(existingChat), nil
+	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
 	}
 
-	chatdao, err := service.repository.CreateChat(chatdao)
+	chatdao := &model.Chat{Users: users}
+	chatdao, err = service.repository.CreateChat(chatdao)
 	if err != nil {
-		return &ChatDTO{}, err
+		return nil, err
 	}
 
-	userDTOs := make([]user.UserDTO, len(chatdao.Users))
-	for i, userModel := range chatdao.Users {
-		userDTOs[i] = user.UserDTO{Id: userModel.ID, Username: userModel.Username}
-	}
-
-	return &ChatDTO{Users: userDTOs}, nil
+	return convertToChatDTO(chatdao), nil
 }
 
 func (service *ChatService) GetUserChats(userId uint) ([]ChatsList, error) {
