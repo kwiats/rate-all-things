@@ -17,6 +17,8 @@ type UserUpdateDTO struct {
 type UserDTO struct {
 	Id             uint   `json:"id"`
 	Username       string `json:"username,omitempty"`
+	Firstname      string `json:"firstname"`
+	Lastname       string `json:"lastname"`
 	ProfilePicture string `json:"profile_picture,omitempty"`
 	Email          string `json:"email,omitempty"`
 }
