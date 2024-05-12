@@ -59,6 +59,24 @@ func HandleGet(userService *UserService) http.HandlerFunc {
 	}
 }
 
+func HandleSearch(userService *UserService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query().Get("q")
+		if query == "" {
+			http.Error(w, "Query parameter 'q' is required", http.StatusBadRequest)
+			return
+		}
+
+		users, err := userService.SearchUsers(query)
+		if err != nil {
+			return
+		}
+
+		common.WriteJSON(w, http.StatusOK, users)
+
+	}
+}
+
 func HandleGetById(userService *UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -73,6 +91,7 @@ func HandleGetById(userService *UserService) http.HandlerFunc {
 		if err != nil {
 			return
 		}
+
 
 		common.WriteJSON(w, http.StatusOK, users)
 	}
