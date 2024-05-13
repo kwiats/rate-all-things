@@ -37,6 +37,15 @@ func (repo *UserRepository) GetUserByUsername(username string) (*model.User, err
 	return &user, nil
 }
 
+func (repo *UserRepository) SearchUsers(query string) ([]*model.User, error) {
+	var users []*model.User
+	likeQuery := "%" + query + "%"
+	if err := repo.db.Where("first_name ILIKE ? OR last_name ILIKE ?", likeQuery, likeQuery).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (repo *UserRepository) GetUserByID(id uint) (*model.User, error) {
 	var user model.User
 	if err := repo.db.First(&user, id).Error; err != nil {
