@@ -22,7 +22,7 @@ func HandleUserRouter(db *gorm.DB, r *mux.Router, wg *sync.WaitGroup) {
 	if err != nil {
 		log.Fatalf("failed to load config file: %v", err)
 	}
-	localStorage, err := media.NewMinioBlobStorage(settings.Envs.MinioHost, settings.Envs.MinioAccessKey, settings.Envs.MinioSecretAccessKey, settings.Envs.MinioIsSecure)
+	localStorage, err := media.NewMinioBlobStorage(settings.Envs.MinioHost, settings.Envs.MinioAccessKey, settings.Envs.MinioSecretAccessKey, settings.Envs.MinioIsSecure, "pictures")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,6 +31,8 @@ func HandleUserRouter(db *gorm.DB, r *mux.Router, wg *sync.WaitGroup) {
 
 	router.HandleFunc("/", HandleCreate(userService)).Methods("POST")
 	router.HandleFunc("/", middleware.AuthMiddleware(HandleGet(userService))).Methods("GET")
+		router.HandleFunc("/search/", middleware.AuthMiddleware(HandleSearch(userService))).Methods("GET")
+
 	router.HandleFunc("/{id}", middleware.AuthMiddleware(HandleGetById(userService))).Methods("GET")
 	router.HandleFunc("/{username}", middleware.AuthMiddleware(HandleGetByUsername(userService))).Methods("GET")
 	router.HandleFunc("/{id}", middleware.AuthMiddleware(HandleDelete(userService))).Methods("GET")
