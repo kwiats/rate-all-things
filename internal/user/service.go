@@ -17,6 +17,7 @@ type IUserRepository interface {
 	GetUserByUsername(string) (*model.User, error)
 	GetUserByID(uint) (*model.User, error)
 	GetUsers() ([]*model.User, error)
+	SearchUsers(string) ([]*model.User, error)
 	DeleteUser(uint) (bool, error)
 	UpdateUser(uint, *model.User) (*model.User, error)
 }
@@ -69,8 +70,48 @@ func (service *UserService) GetUsers() ([]*UserDTO, error) {
 		go func(u *model.User) {
 			defer wg.Done()
 			channel <- &UserDTO{
-				Id:       u.ID,
-				Username: u.Username,
+				Id:             u.ID,
+				Firstname:      u.FirstName,
+				Lastname:       u.LastName,
+				ProfilePicture: u.ProfilePicture,
+				Username:       u.Username,
+			}
+		}(user)
+	}
+
+	go func() {
+		wg.Wait()
+		close(channel)
+	}()
+
+	for _user := range channel {
+		users_dto = append(users_dto, _user)
+	}
+
+	return users_dto, nil
+}
+
+func (service *UserService) SearchUsers(query string) ([]*UserDTO, error) {
+	users, err := service.repository.SearchUsers(query)
+	if err != nil {
+		return nil, err
+	}
+
+	users_dto := make([]*UserDTO, 0, len(users))
+	channel := make(chan *UserDTO, len(users))
+
+	var wg sync.WaitGroup
+
+	for _, user := range users {
+		wg.Add(1)
+		go func(u *model.User) {
+			defer wg.Done()
+			channel <- &UserDTO{
+				Id:             u.ID,
+				Firstname:      u.FirstName,
+				Lastname:       u.LastName,
+				ProfilePicture: u.ProfilePicture,
+				Username:       u.Username,
 			}
 		}(user)
 	}
@@ -94,8 +135,11 @@ func (service *UserService) GetUserById(userId uint) (*UserDTO, error) {
 	}
 
 	return &UserDTO{
-		Id:       user.ID,
-		Username: user.Username,
+		Id:             user.ID,
+		Firstname:      user.FirstName,
+		Lastname:       user.LastName,
+		ProfilePicture: user.ProfilePicture,
+		Username:       user.Username,
 	}, nil
 }
 
