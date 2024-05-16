@@ -7,7 +7,7 @@ type MediaService struct {
 }
 
 type IBlobStorage interface {
-	SaveFile(*multipart.FileHeader) (string, error)
+	SaveFile(*multipart.FileHeader, string) (string, error)
 }
 
 func NewMediaService(blobStorage IBlobStorage) *MediaService {
@@ -16,6 +16,6 @@ func NewMediaService(blobStorage IBlobStorage) *MediaService {
 	}
 }
 
-func (storage *MediaService) SaveFile(file *multipart.FileHeader) (string, error) {
-	return storage.BlobStorage.SaveFile(file)
+func (storage *MediaService) SaveFile(file *multipart.FileHeader, direction string) (string, error) {
+	return storage.BlobStorage.SaveFile(file, direction)
 }
