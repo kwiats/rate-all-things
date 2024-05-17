@@ -16,7 +16,7 @@ type MinioBlobStorage struct {
 	Bucket string
 }
 
-func NewMinioBlobStorage(endpoint, accessKeyID, secretAccessKey string, isSecure bool) (*MinioBlobStorage, error) {
+func NewMinioBlobStorage(endpoint, accessKeyID, secretAccessKey string, isSecure bool, bucketName string) (*MinioBlobStorage, error) {
 	minioClient, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 		Secure: isSecure,
@@ -27,6 +27,7 @@ func NewMinioBlobStorage(endpoint, accessKeyID, secretAccessKey string, isSecure
 
 	return &MinioBlobStorage{
 		Client: minioClient,
+		Bucket: bucketName,
 	}, nil
 }
 
