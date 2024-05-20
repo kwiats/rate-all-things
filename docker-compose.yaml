@@ -24,9 +24,8 @@ services:
     user: postgres
     volumes:
       - db-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=rate-of-things
-      - POSTGRES_PASSWORD=rat123456
+    env_file:
+      - .env
     ports:
       - 5431:5432
     healthcheck:
@@ -52,7 +51,26 @@ services:
     depends_on:
       - api
 
+  minio:
+    image: docker.io/bitnami/minio:2022
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - 'minio_data:/data'
+    env_file:
+      - .env
+  
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8081:8080"
+      
 volumes:
   db-data: 
     name: db-data
+    driver: local
+  minio_data:
+    name: minio_data
     driver: local
